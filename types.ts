@@ -106,3 +106,5 @@ export interface GeneratedIdeaItem {
 }
 
 export type GenerationHistoryItem = GeneratedImageItem | GeneratedIdeaItem;
+
+export type AppView = 'landing' | 'login' | 'register' | 'dashboard' | 'app' | 'mockup' | 'imageGenerator' | 'aiTalk' | 'creativeIdeas' | 'copywriter' | 'history' | 'todo' | 'settings' | 'billing';

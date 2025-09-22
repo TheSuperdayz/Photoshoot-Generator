@@ -32,6 +32,7 @@ const ToDoModal: React.FC<{
             setTitle('');
             setDescription('');
             const today = new Date();
+            // Adjust for timezone offset to ensure the date is correct for the user's local time
             today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
             setDueDate(today.toISOString().split('T')[0]);
             setReminder('none');

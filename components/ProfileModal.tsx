@@ -1,12 +1,10 @@
 import React, { useRef, useState } from 'react';
-import type { User } from '../types';
+import type { User, AppView } from '../types';
 import { UserIcon } from './icons/UserIcon';
 import { PencilIcon } from './icons/PencilIcon';
 import { CogIcon } from './icons/CogIcon';
 import { CalendarIcon } from './icons/CalendarIcon';
 import { BillingIcon } from './icons/BillingIcon';
-
-type AppView = 'todo' | 'settings' | 'billing';
 
 interface ProfileModalProps {
   user: User;

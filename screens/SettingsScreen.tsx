@@ -1,11 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import type { User, ImageData, AIModel, BrandKit } from '../types';
+import type { User, ImageData, AIModel, BrandKit, AppView } from '../types';
 import { PencilIcon } from '../components/icons/PencilIcon';
 import { TrashIcon } from '../components/icons/TrashIcon';
 import { PaletteIcon } from '../components/icons/PaletteIcon';
 import { BillingIcon } from '../components/icons/BillingIcon';
-
-type AppView = 'dashboard' | 'billing';
 
 interface SettingsScreenProps {
   user: User;

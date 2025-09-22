@@ -2,10 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { CreditIcon } from './icons/CreditIcon';
 import { UserIcon } from './icons/UserIcon';
 import { Logo } from './Logo';
-import type { User } from '../types';
-
-// FIX: Added 'copywriter' to AppView to sync with the View type in App.tsx.
-type AppView = 'dashboard' | 'app' | 'mockup' | 'imageGenerator' | 'aiTalk' | 'creativeIdeas' | 'copywriter' | 'history' | 'todo' | 'settings' | 'billing';
+import type { User, AppView } from '../types';
 
 interface HeaderProps {
   user: User | null;

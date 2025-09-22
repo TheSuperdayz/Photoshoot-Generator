@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
-import type { User, PaymentMethod } from '../types';
+import type { User, PaymentMethod, AppView } from '../types';
 import { BillingIcon } from '../components/icons/BillingIcon';
 import { CreditIcon } from '../components/icons/CreditIcon';
 import { TrashIcon } from '../components/icons/TrashIcon';
 import { PlusIcon } from '../components/icons/PlusIcon';
-
-type AppView = 'dashboard' | 'settings';
 
 interface BillingScreenProps {
   user: User;

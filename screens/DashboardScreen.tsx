@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import type { User } from '../types';
+import type { User, AppView } from '../types';
 import { CameraIcon } from '../components/icons/CameraIcon';
 import { TshirtIcon } from '../components/icons/TshirtIcon';
 import { ImageIcon } from '../components/icons/ImageIcon';
@@ -8,7 +8,6 @@ import { LightbulbIcon } from '../components/icons/LightbulbIcon';
 import { QuillIcon } from '../components/icons/QuillIcon';
 
 
-type AppView = 'app' | 'mockup' | 'imageGenerator' | 'aiTalk' | 'creativeIdeas' | 'copywriter' | 'history' | 'todo';
 interface DashboardScreenProps {
   user: User;
   recentCreations: string[];

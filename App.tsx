@@ -31,7 +31,7 @@ import { BillingScreen } from './screens/BillingScreen';
 import { generatePhotoshootImage, generateMockupImage, generateImageFromPrompt, generateCreativeIdeas, generateCopywritingContent } from './services/geminiService';
 
 // Types
-import type { ImageData, User, Template, ChatMessage, CreativeIdea, CopywritingResult, GenerationHistoryItem, ToDoItem, AIModel, BrandKit, SubscriptionPlan, PaymentMethod, BillingHistoryItem, GeneratedImageItem, SessionImage } from './types';
+import type { ImageData, User, Template, ChatMessage, CreativeIdea, CopywritingResult, GenerationHistoryItem, ToDoItem, AIModel, BrandKit, SubscriptionPlan, PaymentMethod, BillingHistoryItem, GeneratedImageItem, SessionImage, AppView } from './types';
 
 /**
  * Adds a text watermark to a base64 encoded image.
@@ -75,11 +75,24 @@ const addWatermark = (base64Image: string, text: string): Promise<string> => {
   });
 };
 
+/**
+ * Reads a Blob object and returns its base64 encoded string representation.
+ * @param blob The Blob object to read.
+ * @returns A promise that resolves with the base64 data URL.
+ */
+const readFileAsBase64 = (blob: Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = (error) => reject(error);
+        reader.readAsDataURL(blob);
+    });
+};
+
 
 const App: React.FC = () => {
   // View & Auth State
-  type View = 'landing' | 'login' | 'register' | 'dashboard' | 'app' | 'mockup' | 'imageGenerator' | 'aiTalk' | 'creativeIdeas' | 'copywriter' | 'history' | 'todo' | 'settings' | 'billing';
-  const [view, setView] = useState<View>('landing');
+  const [view, setView] = useState<AppView>('landing');
   const [user, setUser] = useState<User | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -174,7 +187,7 @@ const App: React.FC = () => {
   // Initialize chat on first load
   useEffect(() => {
     handleSelectPersonality(selectedPersonality);
-  }, []);
+  }, [handleSelectPersonality, selectedPersonality]);
 
   // Parallax effect for dashboard background
   useEffect(() => {
@@ -202,33 +215,38 @@ const App: React.FC = () => {
     }
   }, [view]);
   
-  const updateUserInStorage = (user: User) => {
-    const users = JSON.parse(localStorage.getItem('superdayzUsers') || '{}');
-    users[user.email] = user;
-    localStorage.setItem('superdayzUsers', JSON.stringify(users));
+  
+  // --- Data Persistence ---
+  // Persist user object to localStorage whenever it changes. This is the single source of truth for saving.
+  useEffect(() => {
+    if (user?.email) {
+        const users = JSON.parse(localStorage.getItem('superdayzUsers') || '{}');
+        // We merge here to prevent race conditions from overwriting other user properties
+        // during rapid state changes, although with this central effect, it's less of an issue.
+        users[user.email] = { ...users[user.email], ...user };
+        localStorage.setItem('superdayzUsers', JSON.stringify(users));
 
-    // The history and todos are saved in their own handler functions 
-    // (e.g., handleGenerate..., handleUpdateToDos) to ensure data integrity.
-    // This function should only be responsible for data directly on the user object.
-    localStorage.setItem(`superdayzModels_${user.email}`, JSON.stringify(user.uploadedModels || []));
-    localStorage.setItem(`superdayzBrandKit_${user.email}`, JSON.stringify(user.brandKit || { colorPalette: [] }));
-    localStorage.setItem(`superdayzBillingHistory_${user.email}`, JSON.stringify(user.billingHistory || []));
-    localStorage.setItem(`superdayzPaymentMethods_${user.email}`, JSON.stringify(user.paymentMethods || []));
-  };
+        // Persist related user data that lives on separate keys
+        localStorage.setItem(`superdayzModels_${user.email}`, JSON.stringify(user.uploadedModels || []));
+        localStorage.setItem(`superdayzBrandKit_${user.email}`, JSON.stringify(user.brandKit || { colorPalette: [] }));
+        localStorage.setItem(`superdayzBillingHistory_${user.email}`, JSON.stringify(user.billingHistory || []));
+        localStorage.setItem(`superdayzPaymentMethods_${user.email}`, JSON.stringify(user.paymentMethods || []));
+    }
+  }, [user]);
+
+  // Persist generation history separately.
+  useEffect(() => {
+    if (user?.email) {
+      localStorage.setItem(`superdayzHistory_${user.email}`, JSON.stringify(generationHistory));
+    }
+  }, [generationHistory, user?.email]);
+  // --- End Data Persistence ---
+
 
   const deductCredit = useCallback(() => {
     setUser(prevUser => {
         if (!prevUser) return null;
-        const newCredits = prevUser.credits - 1;
-
-        // Safely update only the credits in localStorage
-        const users = JSON.parse(localStorage.getItem('superdayzUsers') || '{}');
-        if (users[prevUser.email]) {
-            users[prevUser.email].credits = newCredits;
-            localStorage.setItem('superdayzUsers', JSON.stringify(users));
-        }
-        
-        return { ...prevUser, credits: newCredits };
+        return { ...prevUser, credits: prevUser.credits - 1 };
     });
   }, []);
 
@@ -237,13 +255,7 @@ const App: React.FC = () => {
       setGenerationHistory(prev => [...items, ...prev]);
   }, []);
 
-  useEffect(() => {
-    if (user?.email) {
-      localStorage.setItem(`superdayzHistory_${user.email}`, JSON.stringify(generationHistory));
-    }
-  }, [generationHistory, user?.email]);
-
-
+  // Initial load effect
   useEffect(() => {
     const loggedInUserEmail = localStorage.getItem('superdayzLoggedInUser');
     if (loggedInUserEmail) {
@@ -276,7 +288,6 @@ const App: React.FC = () => {
         setGenerationHistory(userHistory);
         setToDoList(userToDos);
         
-        updateUserInStorage(userData);
         setView('dashboard');
       }
     }
@@ -367,7 +378,6 @@ const App: React.FC = () => {
         setGenerationHistory(userHistory);
         setToDoList(userToDos);
         
-        updateUserInStorage(userData);
         setView('dashboard');
     } else {
       setAuthError('Invalid email or password.');
@@ -417,23 +427,11 @@ const App: React.FC = () => {
   };
 
   const handleUpdateProfile = (name: string, role: string) => {
-    if (!user) return;
-     setUser(prevUser => {
-        if (!prevUser) return null;
-        const updatedUser = { ...prevUser, name, role };
-        updateUserInStorage(updatedUser);
-        return updatedUser;
-    });
+     setUser(prevUser => prevUser ? { ...prevUser, name, role } : null);
   }
   
   const handleUpdateProfilePicture = (base64Image: string) => {
-    if (!user) return;
-    setUser(prevUser => {
-        if (!prevUser) return null;
-        const updatedUser = { ...prevUser, profilePicture: base64Image };
-        updateUserInStorage(updatedUser);
-        return updatedUser;
-    });
+    setUser(prevUser => prevUser ? { ...prevUser, profilePicture: base64Image } : null);
   };
 
   const handleChangePassword = (currentPass: string, newPass: string): Promise<void> => {
@@ -442,12 +440,7 @@ const App: React.FC = () => {
             reject(new Error("Incorrect current password."));
             return;
         }
-        setUser(prevUser => {
-            if (!prevUser) return null;
-            const updatedUser = { ...prevUser, password: newPass };
-            updateUserInStorage(updatedUser);
-            return updatedUser;
-        });
+        setUser(prevUser => prevUser ? { ...prevUser, password: newPass } : null);
         resolve();
     });
   };
@@ -476,54 +469,35 @@ const App: React.FC = () => {
   };
 
   const handleAddModel = (name: string, imageData: ImageData) => {
-      if (!user) return;
       const newModel: AIModel = {
           id: `model_${Date.now()}`,
           name,
           ...imageData,
           createdAt: new Date().toISOString(),
       };
-      setUser(prevUser => {
-          if (!prevUser) return null;
-          const updatedModels = [...(prevUser.uploadedModels || []), newModel];
-          const updatedUser = { ...prevUser, uploadedModels: updatedModels };
-          updateUserInStorage(updatedUser);
-          return updatedUser;
-      });
+      setUser(prevUser => prevUser ? { ...prevUser, uploadedModels: [...(prevUser.uploadedModels || []), newModel] } : null);
   };
 
   const handleUpdateModel = (id: string, newName: string) => {
-      if (!user) return;
-        setUser(prevUser => {
+      setUser(prevUser => {
           if (!prevUser) return null;
           const updatedModels = (prevUser.uploadedModels || []).map(model =>
               model.id === id ? { ...model, name: newName } : model
           );
-          const updatedUser = { ...prevUser, uploadedModels: updatedModels };
-          updateUserInStorage(updatedUser);
           return { ...prevUser, uploadedModels: updatedModels };
       });
   };
   
   const handleDeleteModel = (id: string) => {
-        if (!user) return;
         setUser(prevUser => {
           if (!prevUser) return null;
           const updatedModels = (prevUser.uploadedModels || []).filter(model => model.id !== id);
-          const updatedUser = { ...prevUser, uploadedModels: updatedModels };
-          updateUserInStorage(updatedUser);
-          return updatedUser;
+          return { ...prevUser, uploadedModels: updatedModels };
       });
   };
   
   const handleUpdateBrandKit = (updatedBrandKit: BrandKit) => {
-    if (!user) return;
-     setUser(prevUser => {
-        if (!prevUser) return null;
-        const updatedUser = { ...prevUser, brandKit: updatedBrandKit };
-        updateUserInStorage(updatedUser);
-        return updatedUser;
-    });
+     setUser(prevUser => prevUser ? { ...prevUser, brandKit: updatedBrandKit } : null);
   };
   
   // --- Billing & Subscription Handlers ---
@@ -549,9 +523,7 @@ const App: React.FC = () => {
     setUser(prevUser => {
         if (!prevUser) return null;
         const updatedHistory = [...(prevUser.billingHistory || []), ...(billingHistoryUpdate ? [billingHistoryUpdate] : [])];
-        const updatedUser = { ...prevUser, credits: creditUpdate, subscription: newSubscription, billingHistory: updatedHistory };
-        updateUserInStorage(updatedUser);
-        return updatedUser;
+        return { ...prevUser, credits: creditUpdate, subscription: newSubscription, billingHistory: updatedHistory };
     });
   };
 
@@ -565,40 +537,32 @@ const App: React.FC = () => {
       };
       setUser(prevUser => {
           if (!prevUser) return null;
-          const updatedUser = {
+          return {
               ...prevUser,
               credits: prevUser.credits + credits,
               billingHistory: [...(prevUser.billingHistory || []), newHistoryItem]
           };
-          updateUserInStorage(updatedUser);
-          return updatedUser;
       });
   };
   
   const handleAddPaymentMethod = (newMethod: Omit<PaymentMethod, 'id'>) => {
-    if (!user) return;
     const paymentMethod: PaymentMethod = { ...newMethod, id: `pm_${Date.now()}` };
     setUser(prevUser => {
         if (!prevUser) return null;
-        const updatedUser = {
+        return {
             ...prevUser,
             paymentMethods: [...(prevUser.paymentMethods || []), paymentMethod]
         };
-        updateUserInStorage(updatedUser);
-        return updatedUser;
     });
   };
   
   const handleDeletePaymentMethod = (id: string) => {
-    if (!user) return;
      setUser(prevUser => {
         if (!prevUser) return null;
-        const updatedUser = {
+        return {
             ...prevUser,
             paymentMethods: (prevUser.paymentMethods || []).filter(pm => pm.id !== id)
         };
-        updateUserInStorage(updatedUser);
-        return updatedUser;
     });
   };
   // ------------------------------------
@@ -682,44 +646,41 @@ const App: React.FC = () => {
       // Fetch the template image and convert it to base64
       const response = await fetch(selectedTemplate.src);
       const blob = await response.blob();
-      const reader = new FileReader();
-      reader.readAsDataURL(blob);
-      reader.onloadend = async () => {
-        const templateBase64 = reader.result as string;
-        const templateImageData: ImageData = { base64: templateBase64, mimeType: blob.type };
+      const templateBase64 = await readFileAsBase64(blob);
+      const templateImageData: ImageData = { base64: templateBase64, mimeType: blob.type };
 
-        const brandKitToApply = applyBrandKit ? user.brandKit : undefined;
-        const rawImages = await generateMockupImage(designImage, templateImageData, backgroundPrompt, brandKitToApply);
+      const brandKitToApply = applyBrandKit ? user.brandKit : undefined;
+      const rawImages = await generateMockupImage(designImage, templateImageData, backgroundPrompt, brandKitToApply);
 
-        const watermarkText = "created by heart @2025 - Ananda Agung Prasetyo";
-        const watermarkedImages = await Promise.all(
-          rawImages.map(img => addWatermark(img, watermarkText))
-        );
-        
-        const generationTimestamp = Date.now();
-        const newSessionItems: SessionImage[] = [];
-        const newHistoryItems: GenerationHistoryItem[] = [];
+      const watermarkText = "created by heart @2025 - Ananda Agung Prasetyo";
+      const watermarkedImages = await Promise.all(
+        rawImages.map(img => addWatermark(img, watermarkText))
+      );
+      
+      const generationTimestamp = Date.now();
+      const newSessionItems: SessionImage[] = [];
+      const newHistoryItems: GenerationHistoryItem[] = [];
 
-        watermarkedImages.forEach((imgSrc, index) => {
-            const itemId = `mockup_${generationTimestamp}_${index}`;
-            newSessionItems.push({ id: itemId, src: imgSrc });
-            newHistoryItems.push({
-                id: itemId,
-                type: 'mockup',
-                createdAt: new Date().toISOString(),
-                src: imgSrc,
-                prompt: historyPrompt,
-            });
-        });
+      watermarkedImages.forEach((imgSrc, index) => {
+          const itemId = `mockup_${generationTimestamp}_${index}`;
+          newSessionItems.push({ id: itemId, src: imgSrc });
+          newHistoryItems.push({
+              id: itemId,
+              type: 'mockup',
+              createdAt: new Date().toISOString(),
+              src: imgSrc,
+              prompt: historyPrompt,
+          });
+      });
 
-        setGeneratedMockups(prev => [...newSessionItems, ...prev]);
-        addItemsToHistory(newHistoryItems);
-        deductCredit();
-        setIsLoading(false);
-      }
+      setGeneratedMockups(prev => [...newSessionItems, ...prev]);
+      addItemsToHistory(newHistoryItems);
+      deductCredit();
+
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : 'An unknown error occurred.');
+    } finally {
       setIsLoading(false);
     }
   }, [designImage, selectedTemplate, user, backgroundStyle, customBackground, applyBrandKit, deductCredit, addItemsToHistory]);
@@ -807,11 +768,14 @@ const App: React.FC = () => {
            const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred during chat.';
            setError(errorMessage);
            setChatHistory(prev => {
-             const lastMessage = prev[prev.length -1];
-             if(lastMessage.role === 'model' && lastMessage.text === ''){
-               return prev.slice(0, prev.length -1);
+             const newHistory = [...prev];
+             const lastMessage = newHistory[newHistory.length - 1];
+             // If the last message is the empty "thinking" placeholder, remove it
+             if (lastMessage?.role === 'model' && lastMessage.text === '') {
+                 newHistory.pop();
              }
-             return [...prev, {role: 'model', text: `Sorry, I ran into an error: ${errorMessage}`}];
+             // Add the new error message
+             return [...newHistory, { role: 'model', text: `Sorry, I ran into an error: ${errorMessage}` }];
            });
       } finally {
           setIsLoading(false);
@@ -909,7 +873,7 @@ const App: React.FC = () => {
         return <RegisterScreen onRegister={handleRegister} onSwitchToLogin={() => { setView('login'); setAuthError(null); }} error={authError} />;
       default:
         if (user) {
-          const handleNavigation = (v: View) => {
+          const handleNavigation = (v: AppView) => {
             setError(null);
             setView(v);
           };
@@ -1053,7 +1017,7 @@ const App: React.FC = () => {
                     setError(null);
                     try {
                       const results = await handleGenerateCopy(copywritingTopic, copywritingType);
-                      setGeneratedCopy(results);
+                      setGeneratedCopy(prev => [...results, ...prev]);
                     } catch (err) {
                       setError(err instanceof Error ? err.message : 'An unknown error occurred.');
                     } finally {
