@@ -86,6 +86,11 @@ const IdeaCard: React.FC<{ idea: CreativeIdea }> = ({ idea }) => {
 
 export const IdeaGeneratorScreen: React.FC<IdeaGeneratorScreenProps> = (props) => {
     const ideaTypeOptions = ['Photoshoot Concept', 'Mockup Scene', 'Image Prompt'];
+    const ideaTypeTooltips = {
+      'Photoshoot Concept': 'Generates creative direction and themes for a full photoshoot.',
+      'Mockup Scene': 'Describes interesting backgrounds and settings for your mockups.',
+      'Image Prompt': 'Creates detailed text prompts for the AI Image Generator tool.',
+    };
 
     const canGenerate = !!props.topic.trim() && !props.isLoading && props.user && props.user.credits > 0;
 
@@ -117,9 +122,10 @@ export const IdeaGeneratorScreen: React.FC<IdeaGeneratorScreenProps> = (props) =
                             'A new mobile app for connecting local gardeners.',
                             'A winter collection of handmade woolen scarves.',
                         ]}
+                        tooltip="Enter a keyword, product name, or a brief description of what you need ideas for."
                     />
 
-                    <PresetSelector label="What kind of ideas do you need?" options={ideaTypeOptions} selectedOption={props.ideaType} onSelect={props.setIdeaType} />
+                    <PresetSelector label="What kind of ideas do you need?" options={ideaTypeOptions} selectedOption={props.ideaType} onSelect={props.setIdeaType} tooltips={ideaTypeTooltips} />
 
                     <button
                         onClick={props.handleGenerate}

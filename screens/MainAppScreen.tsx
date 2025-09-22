@@ -5,6 +5,7 @@ import { ImageUploader } from '../components/ImageUploader';
 import { GeneratedImageGallery } from '../components/GeneratedImageGallery';
 import { PresetSelector } from '../components/PresetSelector';
 import { EnhancedPromptInput } from '../components/EnhancedPromptInput';
+import { Tooltip } from '../components/Tooltip';
 
 // Types
 import type { ImageData, User, SessionImage } from '../types';
@@ -37,6 +38,28 @@ export const MainAppScreen: React.FC<MainAppScreenProps> = (props) => {
   const sceneOptions = ['Fashion', 'Corporate', 'Wedding', 'Casual', 'Futuristic'];
   const poseOptions = ['Standing', 'Sitting', 'Close-up', 'Action', 'Candid'];
   const lightingOptions = ['Natural', 'Softbox', 'Dramatic', 'Neon', 'Golden Hour'];
+  
+  const sceneTooltips = {
+    'Fashion': 'Creates a high-fashion, editorial look.',
+    'Corporate': 'Generates a clean, professional, business-like setting.',
+    'Wedding': 'Produces elegant and romantic wedding-themed scenes.',
+    'Casual': 'Creates relaxed, everyday, lifestyle environments.',
+    'Futuristic': 'Generates sci-fi, cyberpunk, or futuristic aesthetics.',
+  };
+  const poseTooltips = {
+      'Standing': 'Model will be in a standing pose.',
+      'Sitting': 'Model will be in a sitting pose.',
+      'Close-up': 'Focuses on the model\'s face and upper body.',
+      'Action': 'Generates dynamic, in-motion poses.',
+      'Candid': 'Creates natural, unposed, in-the-moment shots.',
+  };
+  const lightingTooltips = {
+      'Natural': 'Simulates sunlight or ambient daylight.',
+      'Softbox': 'Creates soft, diffused lighting typical of a photo studio.',
+      'Dramatic': 'Uses high-contrast lighting for a moody effect.',
+      'Neon': 'Incorporates vibrant neon lights into the scene.',
+      'Golden Hour': 'Simulates the warm, soft light of sunrise or sunset.',
+  };
 
   const canGenerate = !!props.productImage && !!props.modelImage && !props.isLoading && props.user && props.user.credits > 0;
   const brandKitIsSetup = props.user.brandKit && (props.user.brandKit.logo || props.user.brandKit.colorPalette.length > 0 || props.user.brandKit.brandFont);
@@ -55,13 +78,13 @@ export const MainAppScreen: React.FC<MainAppScreenProps> = (props) => {
           <h2 className="text-xl font-bold text-white">Create Your Photoshoot</h2>
           
           <div className="grid grid-cols-2 gap-4">
-            <ImageUploader label="Product Image" onImageUpload={props.setProductImage} />
-            <ImageUploader label="Model Image" onImageUpload={props.setModelImage} />
+            <ImageUploader label="Product Image" onImageUpload={props.setProductImage} tooltip="Upload the image of the product you want to feature." />
+            <ImageUploader label="Model Image" onImageUpload={props.setModelImage} tooltip="Upload the image of the model you want to feature." />
           </div>
 
-          <PresetSelector label="Scene Style" options={sceneOptions} selectedOption={props.sceneStyle} onSelect={props.setSceneStyle} />
-          <PresetSelector label="Model Pose" options={poseOptions} selectedOption={props.modelPose} onSelect={props.setModelPose} />
-          <PresetSelector label="Lighting" options={lightingOptions} selectedOption={props.lighting} onSelect={props.setLighting} />
+          <PresetSelector label="Scene Style" options={sceneOptions} selectedOption={props.sceneStyle} onSelect={props.setSceneStyle} tooltips={sceneTooltips} />
+          <PresetSelector label="Model Pose" options={poseOptions} selectedOption={props.modelPose} onSelect={props.setModelPose} tooltips={poseTooltips} />
+          <PresetSelector label="Lighting" options={lightingOptions} selectedOption={props.lighting} onSelect={props.setLighting} tooltips={lightingTooltips} />
 
           <EnhancedPromptInput
             label="Additional Details"
@@ -74,29 +97,32 @@ export const MainAppScreen: React.FC<MainAppScreenProps> = (props) => {
                 'Wearing a stylish trench coat and holding an umbrella in the rain.',
                 'Sitting at a minimalist cafe, sunlight streaming in.',
             ]}
+            tooltip="Provide extra details to guide the AI, like specific actions, background elements, or mood."
           />
           
           {brandKitIsSetup && (
-             <div className="flex items-center justify-between bg-black/20 p-3 rounded-lg border border-white/5">
-                <label htmlFor="apply-brand-kit" className="text-sm font-medium text-gray-200 cursor-pointer">
-                  Apply Brand Kit
-                </label>
-                <button
-                  id="apply-brand-kit"
-                  role="switch"
-                  aria-checked={props.applyBrandKit}
-                  onClick={() => props.setApplyBrandKit(!props.applyBrandKit)}
-                  className={`${
-                    props.applyBrandKit ? 'bg-gray-300' : 'bg-gray-600'
-                  } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 focus:ring-offset-gray-900`}
-                >
-                  <span
+            <Tooltip content="Automatically apply your saved logo, brand colors, and font style to the generated image.">
+              <div className="flex items-center justify-between bg-black/20 p-3 rounded-lg border border-white/5">
+                  <label htmlFor="apply-brand-kit" className="text-sm font-medium text-gray-200 cursor-pointer">
+                    Apply Brand Kit
+                  </label>
+                  <button
+                    id="apply-brand-kit"
+                    role="switch"
+                    aria-checked={props.applyBrandKit}
+                    onClick={() => props.setApplyBrandKit(!props.applyBrandKit)}
                     className={`${
-                      props.applyBrandKit ? 'translate-x-6' : 'translate-x-1'
-                    } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
-                  />
-                </button>
-            </div>
+                      props.applyBrandKit ? 'bg-gray-300' : 'bg-gray-600'
+                    } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 focus:ring-offset-gray-900`}
+                  >
+                    <span
+                      className={`${
+                        props.applyBrandKit ? 'translate-x-6' : 'translate-x-1'
+                      } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+                    />
+                  </button>
+              </div>
+            </Tooltip>
           )}
 
           <button

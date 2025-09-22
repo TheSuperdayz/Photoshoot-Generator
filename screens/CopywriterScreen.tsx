@@ -84,6 +84,11 @@ const CopyResultCard: React.FC<{ result: CopywritingResult }> = ({ result }) => 
 
 export const CopywriterScreen: React.FC<CopywriterScreenProps> = (props) => {
     const copyTypeOptions = ['Social Media Caption', 'Product Description', 'Ad Headline'];
+    const copyTypeTooltips = {
+        'Social Media Caption': 'Generates short, engaging captions for platforms like Instagram or Twitter.',
+        'Product Description': 'Creates detailed, persuasive descriptions for e-commerce product pages.',
+        'Ad Headline': 'Writes catchy, attention-grabbing headlines for online ads.',
+    };
 
     const canGenerate = !!props.topic.trim() && !props.isLoading && props.user && props.user.credits > 0;
 
@@ -115,9 +120,10 @@ export const CopywriterScreen: React.FC<CopywriterScreenProps> = (props) => {
                             'A new vegan restaurant opening downtown.',
                             'A 25% off flash sale for our summer collection.',
                         ]}
+                        tooltip="Describe the product, service, or promotion you need copy for."
                     />
 
-                    <PresetSelector label="What kind of copy do you need?" options={copyTypeOptions} selectedOption={props.copyType} onSelect={props.setCopyType} />
+                    <PresetSelector label="What kind of copy do you need?" options={copyTypeOptions} selectedOption={props.copyType} onSelect={props.setCopyType} tooltips={copyTypeTooltips} />
 
                     <button
                         onClick={props.handleGenerate}

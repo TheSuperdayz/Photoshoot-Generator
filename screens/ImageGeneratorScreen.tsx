@@ -5,6 +5,7 @@ import { GeneratedImageGallery } from '../components/GeneratedImageGallery';
 import { PresetSelector } from '../components/PresetSelector';
 import { AspectRatioSelector } from '../components/AspectRatioSelector';
 import { EnhancedPromptInput } from '../components/EnhancedPromptInput';
+import { Tooltip } from '../components/Tooltip';
 
 // Types
 import type { User, SessionImage } from '../types';
@@ -28,6 +29,21 @@ interface ImageGeneratorScreenProps {
 
 export const ImageGeneratorScreen: React.FC<ImageGeneratorScreenProps> = (props) => {
   const styleOptions = ['Photorealistic', 'Cinematic', 'Anime', 'Watercolor', 'Digital Art', 'Pixel Art'];
+  const styleTooltips = {
+    'Photorealistic': 'Generates images that look like real photos.',
+    'Cinematic': 'Creates dramatic, movie-like scenes with rich lighting.',
+    'Anime': 'Produces images in a Japanese animation style.',
+    'Watercolor': 'Simulates the look of a watercolor painting.',
+    'Digital Art': 'Creates a clean, modern digital illustration.',
+    'Pixel Art': 'Generates retro, 8-bit style pixelated art.',
+  };
+  
+  const aspectRatioTooltips = {
+    '1:1': 'Generates a square image, ideal for profile pictures or Instagram posts.',
+    '16:9': 'Generates a widescreen image, ideal for thumbnails or desktop wallpapers.',
+    '9:16': 'Generates a vertical image, ideal for mobile wallpapers or Instagram stories.',
+  };
+
 
   const canGenerate = !!props.prompt.trim() && !props.isLoading && props.user && props.user.credits > 0;
   const brandKitIsSetup = props.user.brandKit && (props.user.brandKit.logo || props.user.brandKit.colorPalette.length > 0 || props.user.brandKit.brandFont);
@@ -57,13 +73,15 @@ export const ImageGeneratorScreen: React.FC<ImageGeneratorScreenProps> = (props)
                 'Hyperrealistic portrait of an old sailor with a weathered face.',
                 'A futuristic cyberpunk city skyline at dusk.',
             ]}
+            tooltip="Describe the image you want the AI to create. Be as specific as possible for best results."
           />
 
-          <PresetSelector label="Style Preset" options={styleOptions} selectedOption={props.stylePreset} onSelect={props.setStylePreset} />
+          <PresetSelector label="Style Preset" options={styleOptions} selectedOption={props.stylePreset} onSelect={props.setStylePreset} tooltips={styleTooltips} />
           
-          <AspectRatioSelector selectedRatio={props.aspectRatio} onSelectRatio={props.setAspectRatio} />
+          <AspectRatioSelector selectedRatio={props.aspectRatio} onSelectRatio={props.setAspectRatio} tooltips={aspectRatioTooltips} />
           
            {brandKitIsSetup && (
+            <Tooltip content="Infuses the generated image with your brand's color palette.">
              <div className="flex items-center justify-between bg-black/20 p-3 rounded-lg border border-white/5">
                 <label htmlFor="apply-brand-kit" className="text-sm font-medium text-gray-200 cursor-pointer">
                   Apply Brand Kit
@@ -84,6 +102,7 @@ export const ImageGeneratorScreen: React.FC<ImageGeneratorScreenProps> = (props)
                   />
                 </button>
             </div>
+            </Tooltip>
           )}
 
           <button

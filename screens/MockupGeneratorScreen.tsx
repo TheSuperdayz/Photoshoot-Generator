@@ -6,6 +6,7 @@ import { GeneratedImageGallery } from '../components/GeneratedImageGallery';
 import { PresetSelector } from '../components/PresetSelector';
 import { TemplateSelector } from '../components/TemplateSelector';
 import { EnhancedPromptInput } from '../components/EnhancedPromptInput';
+import { Tooltip } from '../components/Tooltip';
 
 // Types
 import type { ImageData, User, Template, SessionImage } from '../types';
@@ -31,6 +32,14 @@ interface MockupGeneratorScreenProps {
 
 export const MockupGeneratorScreen: React.FC<MockupGeneratorScreenProps> = (props) => {
   const backgroundOptions = ['Studio White', 'Urban Street', 'Office Desk', 'Minimalist', 'Nature', 'Custom'];
+  const backgroundTooltips = {
+    'Studio White': 'A clean, professional studio with white background.',
+    'Urban Street': 'A gritty, realistic city street environment.',
+    'Office Desk': 'A modern office setting with desk accessories.',
+    'Minimalist': 'A simple, uncluttered, and aesthetically clean background.',
+    'Nature': 'An outdoor scene with natural elements like plants or landscapes.',
+    'Custom': 'Describe your own unique background scene below.',
+  };
 
   const canGenerate = !!props.designImage && !!props.selectedTemplate && !props.isLoading && props.user && props.user.credits > 0;
   const brandKitIsSetup = props.user.brandKit && (props.user.brandKit.logo || props.user.brandKit.colorPalette.length > 0 || props.user.brandKit.brandFont);
@@ -49,7 +58,7 @@ export const MockupGeneratorScreen: React.FC<MockupGeneratorScreenProps> = (prop
           <h2 className="text-xl font-bold text-white">AI Mockup Generator</h2>
           
           <div className="grid grid-cols-1 gap-4">
-             <ImageUploader label="Upload Your Design" onImageUpload={props.setDesignImage} />
+             <ImageUploader label="Upload Your Design" onImageUpload={props.setDesignImage} tooltip="Upload the design, logo, or artwork you want to place on a mockup." />
           </div>
 
           <TemplateSelector
@@ -57,7 +66,7 @@ export const MockupGeneratorScreen: React.FC<MockupGeneratorScreenProps> = (prop
             onSelect={props.setSelectedTemplate}
           />
           
-          <PresetSelector label="Background Style" options={backgroundOptions} selectedOption={props.backgroundStyle} onSelect={props.setBackgroundStyle} />
+          <PresetSelector label="Background Style" options={backgroundOptions} selectedOption={props.backgroundStyle} onSelect={props.setBackgroundStyle} tooltips={backgroundTooltips} />
 
           {props.backgroundStyle === 'Custom' && (
             <EnhancedPromptInput
@@ -72,30 +81,33 @@ export const MockupGeneratorScreen: React.FC<MockupGeneratorScreenProps> = (prop
                     'On a rustic wooden picnic table in a sunny park.',
                     'Held by a person on a busy city street.',
                 ]}
+                tooltip="Describe the exact background scene you want for your mockup."
             />
           )}
           
           {brandKitIsSetup && (
-             <div className="flex items-center justify-between bg-black/20 p-3 rounded-lg border border-white/5">
-                <label htmlFor="apply-brand-kit" className="text-sm font-medium text-gray-200 cursor-pointer">
-                  Apply Brand Kit
-                </label>
-                <button
-                  id="apply-brand-kit"
-                  role="switch"
-                  aria-checked={props.applyBrandKit}
-                  onClick={() => props.setApplyBrandKit(!props.applyBrandKit)}
-                  className={`${
-                    props.applyBrandKit ? 'bg-gray-300' : 'bg-gray-600'
-                  } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 focus:ring-offset-gray-900`}
-                >
-                  <span
+            <Tooltip content="Automatically apply your brand colors and font style to the background scene.">
+              <div className="flex items-center justify-between bg-black/20 p-3 rounded-lg border border-white/5">
+                  <label htmlFor="apply-brand-kit" className="text-sm font-medium text-gray-200 cursor-pointer">
+                    Apply Brand Kit
+                  </label>
+                  <button
+                    id="apply-brand-kit"
+                    role="switch"
+                    aria-checked={props.applyBrandKit}
+                    onClick={() => props.setApplyBrandKit(!props.applyBrandKit)}
                     className={`${
-                      props.applyBrandKit ? 'translate-x-6' : 'translate-x-1'
-                    } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
-                  />
-                </button>
-            </div>
+                      props.applyBrandKit ? 'bg-gray-300' : 'bg-gray-600'
+                    } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 focus:ring-offset-gray-900`}
+                  >
+                    <span
+                      className={`${
+                        props.applyBrandKit ? 'translate-x-6' : 'translate-x-1'
+                      } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+                    />
+                  </button>
+              </div>
+            </Tooltip>
           )}
 
           <button

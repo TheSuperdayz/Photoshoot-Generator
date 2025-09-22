@@ -4,6 +4,7 @@ import React, { useRef, useEffect } from 'react';
 import { PersonalitySelector } from '../components/PersonalitySelector';
 import { SendIcon } from '../components/icons/SendIcon';
 import { LoadingSpinner } from '../components/LoadingSpinner';
+import { Tooltip } from '../components/Tooltip';
 
 // Types
 import type { User, ChatMessage } from '../types';
@@ -22,6 +23,13 @@ interface AITalkScreenProps {
 
 export const AITalkScreen: React.FC<AITalkScreenProps> = (props) => {
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    
+    const personalityTooltips = {
+        'Chill Buddy': 'A casual, supportive, and easy-going chat partner.',
+        'Wise Mentor': 'Provides insightful, thoughtful, and encouraging advice.',
+        'Sassy Bestie': 'Offers witty, sarcastic, and brutally honest but funny feedback.',
+        'Professional Coach': 'A structured, goal-oriented coach for actionable steps.',
+    };
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -51,6 +59,7 @@ export const AITalkScreen: React.FC<AITalkScreenProps> = (props) => {
                     <PersonalitySelector
                         selectedPersonality={props.selectedPersonality}
                         onSelect={props.handleSelectPersonality}
+                        tooltips={personalityTooltips}
                     />
                 </div>
 
@@ -84,14 +93,16 @@ export const AITalkScreen: React.FC<AITalkScreenProps> = (props) => {
                 <div className="flex-shrink-0 pt-4 mt-auto">
                      {props.error && <p className="text-red-400 text-xs text-center mb-2">{props.error}</p>}
                     <form onSubmit={handleFormSubmit} className="relative">
-                        <input
-                            type="text"
-                            value={props.currentMessage}
-                            onChange={(e) => props.setCurrentMessage(e.target.value)}
-                            placeholder={`Message ${props.selectedPersonality}...`}
-                            className="w-full bg-black/30 backdrop-blur-2xl border border-white/10 rounded-full py-3 pl-5 pr-14 text-white placeholder-gray-400 focus:ring-2 focus:ring-gray-400 focus:outline-none transition"
-                            disabled={props.isLoading || (props.user && props.user.credits <= 0)}
-                        />
+                        <Tooltip content="Ask the AI anything! You can ask for advice, brainstorm ideas, or just have a chat.">
+                            <input
+                                type="text"
+                                value={props.currentMessage}
+                                onChange={(e) => props.setCurrentMessage(e.target.value)}
+                                placeholder={`Message ${props.selectedPersonality}...`}
+                                className="w-full bg-black/30 backdrop-blur-2xl border border-white/10 rounded-full py-3 pl-5 pr-14 text-white placeholder-gray-400 focus:ring-2 focus:ring-gray-400 focus:outline-none transition"
+                                disabled={props.isLoading || (props.user && props.user.credits <= 0)}
+                            />
+                        </Tooltip>
                         <button
                             type="submit"
                             disabled={props.isLoading || !props.currentMessage.trim() || (props.user && props.user.credits <= 0)}

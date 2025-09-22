@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { SparklesIcon } from './icons/SparklesIcon';
+import { Tooltip } from './Tooltip';
 
 interface EnhancedPromptInputProps {
   label: string;
@@ -9,6 +10,7 @@ interface EnhancedPromptInputProps {
   rows?: number;
   maxLength?: number;
   examplePrompts: string[];
+  tooltip?: string;
 }
 
 export const EnhancedPromptInput: React.FC<EnhancedPromptInputProps> = ({
@@ -19,6 +21,7 @@ export const EnhancedPromptInput: React.FC<EnhancedPromptInputProps> = ({
   rows = 3,
   maxLength = 500,
   examplePrompts,
+  tooltip,
 }) => {
   const [showExamples, setShowExamples] = useState(false);
 
@@ -30,9 +33,11 @@ export const EnhancedPromptInput: React.FC<EnhancedPromptInputProps> = ({
   return (
     <div>
       <div className="flex justify-between items-center mb-2">
-        <label htmlFor={`enhanced-prompt-${label}`} className="block text-sm font-medium text-gray-300">
-          {label}
-        </label>
+        <Tooltip content={tooltip || ''}>
+          <label htmlFor={`enhanced-prompt-${label}`} className="block text-sm font-medium text-gray-300">
+            {label}
+          </label>
+        </Tooltip>
         {examplePrompts.length > 0 && (
           <button
             type="button"

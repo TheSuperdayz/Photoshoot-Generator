@@ -6,7 +6,6 @@ import type { Chat } from "@google/genai";
 
 // Components
 import { Header } from './components/Header';
-import { ProfileModal } from './components/ProfileModal';
 import { Footer } from './components/Footer';
 import { CopywriterModal } from './components/CopywriterModal';
 import { ReminderToast } from './components/ReminderToast';
@@ -97,7 +96,6 @@ const App: React.FC = () => {
   const [view, setView] = useState<AppView>('landing');
   const [user, setUser] = useState<User | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
-  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isOnboardingVisible, setIsOnboardingVisible] = useState(false);
   
   // App State
@@ -916,19 +914,8 @@ const App: React.FC = () => {
                 user={user}
                 onLogout={handleLogout}
                 onNavigateToBilling={() => handleNavigation('billing')}
-                onOpenProfile={() => setIsProfileModalOpen(true)}
                 activeView={view}
                 onNavigate={handleNavigation}
-              />
-              <ProfileModal
-                isOpen={isProfileModalOpen}
-                user={user}
-                onClose={() => setIsProfileModalOpen(false)}
-                onUpdateProfilePicture={handleUpdateProfilePicture}
-                onNavigate={(v) => {
-                    handleNavigation(v);
-                    setIsProfileModalOpen(false);
-                }}
               />
               <CopywriterModal
                   isOpen={isCopyModalOpen}

@@ -4,6 +4,7 @@ import { PencilIcon } from '../components/icons/PencilIcon';
 import { TrashIcon } from '../components/icons/TrashIcon';
 import { PaletteIcon } from '../components/icons/PaletteIcon';
 import { BillingIcon } from '../components/icons/BillingIcon';
+import { Tooltip } from '../components/Tooltip';
 
 interface SettingsScreenProps {
   user: User;
@@ -164,11 +165,15 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ user, onUpdatePr
           <h2 className="text-2xl font-bold text-white mb-6">Profile Information</h2>
           <form onSubmit={handleProfileSubmit} className="space-y-4">
             <div>
-              <label className={formLabelStyle} htmlFor="profile-name">Full Name</label>
+              <Tooltip content="This is your display name throughout the application.">
+                <label className={formLabelStyle} htmlFor="profile-name">Full Name</label>
+              </Tooltip>
               <input id="profile-name" type="text" value={name} onChange={(e) => setName(e.target.value)} required className={formInputStyle} />
             </div>
             <div>
-              <label className={formLabelStyle} htmlFor="profile-role">Your Role</label>
+              <Tooltip content="Your role (e.g., 'Photographer', 'Brand Manager') helps the AI tailor its suggestions for you.">
+                <label className={formLabelStyle} htmlFor="profile-role">Your Role</label>
+              </Tooltip>
               <input id="profile-role" type="text" value={role} onChange={(e) => setRole(e.target.value)} required className={formInputStyle} />
             </div>
             <div className="flex justify-end items-center gap-4 pt-2">
@@ -195,7 +200,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ user, onUpdatePr
           <div className="space-y-6">
               {/* Logo Uploader */}
               <div>
-                  <label className={formLabelStyle}>Brand Logo</label>
+                  <Tooltip content="Upload your brand's logo. The AI will try to incorporate it subtly in some generations.">
+                    <label className={formLabelStyle}>Brand Logo</label>
+                  </Tooltip>
                   <div className="flex items-center gap-4">
                       <div className="w-20 h-20 bg-black/20 rounded-lg border border-gray-600 flex items-center justify-center overflow-hidden">
                           {brandKit.logo ? (
@@ -215,7 +222,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ user, onUpdatePr
               </div>
               {/* Color Palette */}
               <div>
-                  <label className={formLabelStyle}>Color Palette</label>
+                  <Tooltip content="Define your brand's primary colors. The AI will use these to influence the color scheme of generated images.">
+                    <label className={formLabelStyle}>Color Palette</label>
+                  </Tooltip>
                   <div className="flex items-center gap-3 mb-3">
                       <input type="color" value={newColor} onChange={e => setNewColor(e.target.value)} className="w-10 h-10 p-0 border-none cursor-pointer bg-transparent appearance-none" />
                       <input type="text" value={newColor} onChange={e => setNewColor(e.target.value)} className={`${formInputStyle} w-32`} />
@@ -235,7 +244,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ user, onUpdatePr
               </div>
               {/* Brand Font */}
               <div>
-                  <label className={formLabelStyle} htmlFor="brand-font">Brand Font</label>
+                  <Tooltip content="Specify your brand's font style. The AI will try to match this style if any text is generated.">
+                    <label className={formLabelStyle} htmlFor="brand-font">Brand Font</label>
+                  </Tooltip>
                   <input id="brand-font" type="text" value={brandKit.brandFont || ''} onChange={(e) => handleBrandKitChange({ brandFont: e.target.value })} placeholder="e.g., Poppins, Helvetica" className={formInputStyle} />
               </div>
           </div>
@@ -267,7 +278,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ user, onUpdatePr
         {/* Model Management Section */}
         <div className="bg-black/30 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-lg p-8 mb-8">
           <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-6 gap-4">
-            <h2 className="text-2xl font-bold text-white">Model Management</h2>
+             <Tooltip content="Upload images of recurring models or characters to easily use them in photoshoots.">
+              <h2 className="text-2xl font-bold text-white">Model Management</h2>
+            </Tooltip>
             <button onClick={handleUploadClick} className="font-bold py-2 px-5 rounded-full text-gray-900 bg-white hover:bg-gray-200 transition-colors">
               Upload New Model
             </button>

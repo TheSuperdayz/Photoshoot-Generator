@@ -10,7 +10,6 @@ interface HeaderProps {
   onNavigate: (view: AppView) => void;
   onLogout: () => void;
   onNavigateToBilling: () => void;
-  onOpenProfile: () => void;
 }
 
 const NavItem: React.FC<{ label: string; isActive: boolean; onClick: () => void }> = ({ label, isActive, onClick }) => (
@@ -25,7 +24,7 @@ const NavItem: React.FC<{ label: string; isActive: boolean; onClick: () => void 
 );
 
 
-export const Header: React.FC<HeaderProps> = ({ user, activeView, onNavigate, onLogout, onNavigateToBilling, onOpenProfile }) => {
+export const Header: React.FC<HeaderProps> = ({ user, activeView, onNavigate, onLogout, onNavigateToBilling }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -81,7 +80,7 @@ export const Header: React.FC<HeaderProps> = ({ user, activeView, onNavigate, on
                             <p className="text-sm font-semibold text-white truncate" title={user.name}>{user.name}</p>
                             <p className="text-xs text-gray-400 truncate" title={user.email}>{user.email}</p>
                         </div>
-                        <button onClick={() => { onOpenProfile(); setDropdownOpen(false); }} className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-white/10">
+                        <button onClick={() => { onNavigate('settings'); setDropdownOpen(false); }} className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-white/10">
                           Profile
                         </button>
                         <button onClick={() => { onNavigate('billing'); setDropdownOpen(false); }} className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-white/10">
