@@ -4,6 +4,7 @@ import React from 'react';
 import { ImageUploader } from '../components/ImageUploader';
 import { GeneratedImageGallery } from '../components/GeneratedImageGallery';
 import { PresetSelector } from '../components/PresetSelector';
+import { EnhancedPromptInput } from '../components/EnhancedPromptInput';
 
 // Types
 import type { ImageData, User, SessionImage } from '../types';
@@ -62,17 +63,18 @@ export const MainAppScreen: React.FC<MainAppScreenProps> = (props) => {
           <PresetSelector label="Model Pose" options={poseOptions} selectedOption={props.modelPose} onSelect={props.setModelPose} />
           <PresetSelector label="Lighting" options={lightingOptions} selectedOption={props.lighting} onSelect={props.setLighting} />
 
-          <div>
-            <label htmlFor="prompt" className="block text-sm font-medium text-gray-300 mb-2">Additional Details</label>
-            <textarea
-              id="prompt"
-              rows={3}
-              className="w-full bg-black/20 border border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-gray-500 focus:border-gray-500 transition duration-200 placeholder-gray-400"
-              placeholder="e.g., holding a coffee cup, in a city at night..."
-              value={props.customPrompt}
-              onChange={(e) => props.setCustomPrompt(e.target.value)}
-            />
-          </div>
+          <EnhancedPromptInput
+            label="Additional Details"
+            value={props.customPrompt}
+            onChange={props.setCustomPrompt}
+            placeholder="e.g., holding a coffee cup, in a city at night..."
+            examplePrompts={[
+                'In a bustling city at night, surrounded by neon lights.',
+                'Laughing and looking away from the camera.',
+                'Wearing a stylish trench coat and holding an umbrella in the rain.',
+                'Sitting at a minimalist cafe, sunlight streaming in.',
+            ]}
+          />
           
           {brandKitIsSetup && (
              <div className="flex items-center justify-between bg-black/20 p-3 rounded-lg border border-white/5">

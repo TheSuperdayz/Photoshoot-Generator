@@ -4,6 +4,7 @@ import React from 'react';
 import { GeneratedImageGallery } from '../components/GeneratedImageGallery';
 import { PresetSelector } from '../components/PresetSelector';
 import { AspectRatioSelector } from '../components/AspectRatioSelector';
+import { EnhancedPromptInput } from '../components/EnhancedPromptInput';
 
 // Types
 import type { User, SessionImage } from '../types';
@@ -44,17 +45,19 @@ export const ImageGeneratorScreen: React.FC<ImageGeneratorScreenProps> = (props)
         <div className="lg:col-span-4 bg-black/30 backdrop-blur-2xl border border-white/10 rounded-2xl p-6 shadow-lg flex flex-col gap-6 h-fit sticky top-24">
           <h2 className="text-xl font-bold text-white">AI Image Generator</h2>
           
-          <div>
-            <label htmlFor="prompt" className="block text-sm font-medium text-gray-300 mb-2">Your Prompt</label>
-            <textarea
-              id="prompt"
-              rows={4}
-              className="w-full bg-black/20 border border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-gray-500 focus:border-gray-500 transition duration-200 placeholder-gray-400"
-              placeholder="e.g., A majestic lion wearing a crown, studio lighting..."
-              value={props.prompt}
-              onChange={(e) => props.setPrompt(e.target.value)}
-            />
-          </div>
+          <EnhancedPromptInput
+            label="Your Prompt"
+            value={props.prompt}
+            onChange={props.setPrompt}
+            placeholder="e.g., A majestic lion wearing a crown, studio lighting..."
+            rows={4}
+            examplePrompts={[
+                'A magical forest with glowing mushrooms and a crystal river.',
+                'An astronaut riding a flamingo on the moon, pop art style.',
+                'Hyperrealistic portrait of an old sailor with a weathered face.',
+                'A futuristic cyberpunk city skyline at dusk.',
+            ]}
+          />
 
           <PresetSelector label="Style Preset" options={styleOptions} selectedOption={props.stylePreset} onSelect={props.setStylePreset} />
           

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import type { User, CopywritingResult } from '../types';
 import { PresetSelector } from './PresetSelector';
 import { ClipboardIcon } from './icons/ClipboardIcon';
@@ -69,6 +69,27 @@ export const CopywriterModal: React.FC<CopywriterModalProps> = ({ isOpen, onClos
     const [topic, setTopic] = useState('');
     const [copyType, setCopyType] = useState('Social Media Caption');
     const [isClosing, setIsClosing] = useState(false);
+    
+    const [placeholder, setPlaceholder] = useState("e.g., 'Urban Explorer Sneakers'");
+    const placeholderExamples = useMemo(() => [
+        "e.g., 'The photo's warm and cozy feeling'",
+        "e.g., 'A confident and stylish look'",
+        "e.g., 'Our new eco-friendly product line'",
+        "e.g., 'Limited edition floral print tote bag'"
+    ], []);
+
+    useEffect(() => {
+        if (isOpen) {
+            let index = 0;
+            const intervalId = setInterval(() => {
+                index = (index + 1) % placeholderExamples.length;
+                setPlaceholder(placeholderExamples[index]);
+            }, 3000); // Change placeholder every 3 seconds
+
+            return () => clearInterval(intervalId);
+        }
+    }, [isOpen, placeholderExamples]);
+
 
     const handleClose = () => {
         setIsClosing(true);
@@ -116,7 +137,7 @@ export const CopywriterModal: React.FC<CopywriterModalProps> = ({ isOpen, onClos
                                 type="text"
                                 value={topic}
                                 onChange={(e) => setTopic(e.target.value)}
-                                placeholder="e.g., 'Urban Explorer Sneakers'"
+                                placeholder={placeholder}
                                 className="w-full bg-black/20 border border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-gray-400 placeholder-gray-500"
                             />
                         </div>

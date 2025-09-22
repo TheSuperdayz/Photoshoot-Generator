@@ -5,6 +5,7 @@ import { PresetSelector } from '../components/PresetSelector';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { QuillIcon } from '../components/icons/QuillIcon';
 import { ClipboardIcon } from '../components/icons/ClipboardIcon';
+import { EnhancedPromptInput } from '../components/EnhancedPromptInput';
 
 // Types
 import type { User, CopywritingResult } from '../types';
@@ -103,17 +104,18 @@ export const CopywriterScreen: React.FC<CopywriterScreenProps> = (props) => {
 
                 {/* Control Panel */}
                 <div className="bg-black/30 backdrop-blur-2xl border border-white/10 rounded-2xl p-6 shadow-lg flex flex-col gap-6 mb-12">
-                    <div>
-                        <label htmlFor="topic" className="block text-sm font-medium text-gray-300 mb-2">Your Topic or Product</label>
-                        <textarea
-                            id="topic"
-                            rows={3}
-                            className="w-full bg-black/20 border border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-gray-500 focus:border-gray-500 transition duration-200 placeholder-gray-400"
-                            placeholder="e.g., A new line of sustainable sneakers for urban explorers..."
-                            value={props.topic}
-                            onChange={(e) => props.setTopic(e.target.value)}
-                        />
-                    </div>
+                     <EnhancedPromptInput
+                        label="Your Topic or Product"
+                        value={props.topic}
+                        onChange={props.setTopic}
+                        placeholder="e.g., A new line of sustainable sneakers for urban explorers..."
+                        examplePrompts={[
+                            'Organic, fair-trade coffee beans with chocolate notes.',
+                            'A high-performance gaming laptop with a sleek design.',
+                            'A new vegan restaurant opening downtown.',
+                            'A 25% off flash sale for our summer collection.',
+                        ]}
+                    />
 
                     <PresetSelector label="What kind of copy do you need?" options={copyTypeOptions} selectedOption={props.copyType} onSelect={props.setCopyType} />
 
