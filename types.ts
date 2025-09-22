@@ -55,6 +55,7 @@ export interface User {
   subscription?: SubscriptionPlan;
   paymentMethods?: PaymentMethod[];
   billingHistory?: BillingHistoryItem[];
+  hasCompletedOnboarding?: boolean;
 }
 
 export interface Template {

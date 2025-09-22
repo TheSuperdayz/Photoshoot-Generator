@@ -1,4 +1,5 @@
 
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { GoogleGenAI } from "@google/genai";
 import type { Chat } from "@google/genai";
@@ -9,6 +10,7 @@ import { ProfileModal } from './components/ProfileModal';
 import { Footer } from './components/Footer';
 import { CopywriterModal } from './components/CopywriterModal';
 import { ReminderToast } from './components/ReminderToast';
+import { OnboardingModal } from './components/OnboardingModal';
 
 // Screens
 import { LandingScreen } from './screens/LandingScreen';
@@ -96,6 +98,7 @@ const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isOnboardingVisible, setIsOnboardingVisible] = useState(false);
   
   // App State
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -217,16 +220,19 @@ const App: React.FC = () => {
   
   
   // --- Data Persistence ---
-  // Persist user object to localStorage whenever it changes. This is the single source of truth for saving.
+  // The following useEffect hooks centralize all localStorage writes.
+  // Handler functions should only call state setters (e.g., setUser, setToDoList),
+  // and these effects will automatically persist the new state.
+
+  // Persist the entire `user` object and its related data whenever it changes.
   useEffect(() => {
     if (user?.email) {
         const users = JSON.parse(localStorage.getItem('superdayzUsers') || '{}');
-        // We merge here to prevent race conditions from overwriting other user properties
-        // during rapid state changes, although with this central effect, it's less of an issue.
+        // Merge with existing data to prevent race conditions from overwriting other user properties.
         users[user.email] = { ...users[user.email], ...user };
         localStorage.setItem('superdayzUsers', JSON.stringify(users));
 
-        // Persist related user data that lives on separate keys
+        // Persist specific parts of the user object to their own keys for organization.
         localStorage.setItem(`superdayzModels_${user.email}`, JSON.stringify(user.uploadedModels || []));
         localStorage.setItem(`superdayzBrandKit_${user.email}`, JSON.stringify(user.brandKit || { colorPalette: [] }));
         localStorage.setItem(`superdayzBillingHistory_${user.email}`, JSON.stringify(user.billingHistory || []));
@@ -240,6 +246,13 @@ const App: React.FC = () => {
       localStorage.setItem(`superdayzHistory_${user.email}`, JSON.stringify(generationHistory));
     }
   }, [generationHistory, user?.email]);
+  
+  // Persist To-Do list separately.
+  useEffect(() => {
+    if (user?.email) {
+      localStorage.setItem(`superdayzTodos_${user.email}`, JSON.stringify(toDoList));
+    }
+  }, [toDoList, user?.email]);
   // --- End Data Persistence ---
 
 
@@ -289,6 +302,10 @@ const App: React.FC = () => {
         setToDoList(userToDos);
         
         setView('dashboard');
+        
+        if (!userData.hasCompletedOnboarding) {
+            setIsOnboardingVisible(true);
+        }
       }
     }
   }, []);
@@ -379,6 +396,10 @@ const App: React.FC = () => {
         setToDoList(userToDos);
         
         setView('dashboard');
+
+        if (!userData.hasCompletedOnboarding) {
+            setIsOnboardingVisible(true);
+        }
     } else {
       setAuthError('Invalid email or password.');
     }
@@ -397,6 +418,7 @@ const App: React.FC = () => {
         subscription: { plan: 'Free', nextBillingDate: null, creditsPerMonth: 5 },
         paymentMethods: [],
         billingHistory: [],
+        hasCompletedOnboarding: false,
     };
     
     users[email] = newUser;
@@ -416,6 +438,7 @@ const App: React.FC = () => {
     setGenerationHistory([]);
     setToDoList([]);
     setView('dashboard');
+    setIsOnboardingVisible(true);
   };
 
   const handleLogout = () => {
@@ -432,6 +455,11 @@ const App: React.FC = () => {
   
   const handleUpdateProfilePicture = (base64Image: string) => {
     setUser(prevUser => prevUser ? { ...prevUser, profilePicture: base64Image } : null);
+  };
+  
+  const handleCompleteOnboarding = () => {
+    setUser(prevUser => prevUser ? { ...prevUser, hasCompletedOnboarding: true } : null);
+    setIsOnboardingVisible(false);
   };
 
   const handleChangePassword = (currentPass: string, newPass: string): Promise<void> => {
@@ -463,9 +491,8 @@ const App: React.FC = () => {
   };
 
   const handleUpdateToDos = (updatedToDos: ToDoItem[]) => {
-      if (!user) return;
+      // The state update will trigger the `useEffect` hook for persistence.
       setToDoList(updatedToDos);
-      localStorage.setItem(`superdayzTodos_${user.email}`, JSON.stringify(updatedToDos));
   };
 
   const handleAddModel = (name: string, imageData: ImageData) => {
@@ -1076,6 +1103,13 @@ const App: React.FC = () => {
         </div>
       </div>
       
+      {isOnboardingVisible && user && (
+        <OnboardingModal
+            isOpen={isOnboardingVisible}
+            onClose={handleCompleteOnboarding}
+            user={user}
+        />
+      )}
       {user && reminderToast && <ReminderToast todo={reminderToast} onClose={() => setReminderToast(null)} />}
 
       <div className="flex-grow flex flex-col z-10">
