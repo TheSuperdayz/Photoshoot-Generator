@@ -5,6 +5,7 @@ import { TrashIcon } from '../components/icons/TrashIcon';
 import { PaletteIcon } from '../components/icons/PaletteIcon';
 import { BillingIcon } from '../components/icons/BillingIcon';
 import { Tooltip } from '../components/Tooltip';
+import { Alert } from '../components/Alert';
 
 interface SettingsScreenProps {
   user: User;
@@ -176,9 +177,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ user, onUpdatePr
               </Tooltip>
               <input id="profile-role" type="text" value={role} onChange={(e) => setRole(e.target.value)} required className={formInputStyle} />
             </div>
+            {profileMessage && <Alert type={profileMessage.type} message={profileMessage.text} />}
             <div className="flex justify-end items-center gap-4 pt-2">
-                 {profileMessage && <p className={`text-sm ${profileMessage.type === 'success' ? 'text-green-400' : 'text-red-400'}`}>{profileMessage.text}</p>}
-                <button type="submit" className="font-bold py-2 px-5 rounded-full text-gray-900 bg-white hover:bg-gray-200 transition-colors">Save Profile</button>
+                <button type="submit" className="font-bold py-2 px-5 rounded-full text-gray-900 bg-white hover:bg-gray-200 transition-colors btn-bounce">Save Profile</button>
             </div>
           </form>
         </div>
@@ -188,7 +189,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ user, onUpdatePr
           <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3"><BillingIcon className="w-6 h-6"/>Billing & Subscription</h2>
             <div className="flex flex-col sm:flex-row justify-between sm:items-center">
               <p className="text-gray-300 mb-4 sm:mb-0">Manage your plan, payment methods, and view your billing history.</p>
-              <button onClick={() => onNavigate('billing')} className="font-bold py-2 px-5 rounded-full text-gray-900 bg-white hover:bg-gray-200 transition-colors">
+              <button onClick={() => onNavigate('billing')} className="font-bold py-2 px-5 rounded-full text-gray-900 bg-white hover:bg-gray-200 transition-colors btn-bounce">
                 Manage Billing
               </button>
             </div>
@@ -212,10 +213,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ user, onUpdatePr
                           )}
                       </div>
                       <div className="flex flex-col gap-2">
-                          <button type="button" onClick={handleLogoUploadClick} className="font-semibold py-2 px-4 rounded-full text-sm text-gray-900 bg-white/80 hover:bg-white transition-colors">Upload Logo</button>
+                          <button type="button" onClick={handleLogoUploadClick} className="font-semibold py-2 px-4 rounded-full text-sm text-gray-900 bg-white/80 hover:bg-white transition-colors btn-bounce">Upload Logo</button>
                           <input type="file" ref={logoInputRef} onChange={handleLogoFileChange} accept="image/png, image/jpeg, image/webp" className="hidden" />
                           {brandKit.logo && (
-                              <button type="button" onClick={handleRemoveLogo} className="font-semibold py-2 px-4 rounded-full text-sm text-white bg-white/10 hover:bg-white/20 transition-colors">Remove</button>
+                              <button type="button" onClick={handleRemoveLogo} className="font-semibold py-2 px-4 rounded-full text-sm text-white bg-white/10 hover:bg-white/20 transition-colors btn-bounce">Remove</button>
                           )}
                       </div>
                   </div>
@@ -228,7 +229,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ user, onUpdatePr
                   <div className="flex items-center gap-3 mb-3">
                       <input type="color" value={newColor} onChange={e => setNewColor(e.target.value)} className="w-10 h-10 p-0 border-none cursor-pointer bg-transparent appearance-none" />
                       <input type="text" value={newColor} onChange={e => setNewColor(e.target.value)} className={`${formInputStyle} w-32`} />
-                      <button type="button" onClick={handleAddColor} className="font-bold py-2 px-4 rounded-full text-gray-900 bg-white hover:bg-gray-200 transition-colors">Add Color</button>
+                      <button type="button" onClick={handleAddColor} className="font-bold py-2 px-4 rounded-full text-gray-900 bg-white hover:bg-gray-200 transition-colors btn-bounce">Add Color</button>
                   </div>
                   <div className="flex flex-wrap gap-3">
                       {brandKit.colorPalette.map(color => (
@@ -268,9 +269,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ user, onUpdatePr
               <label className={formLabelStyle} htmlFor="confirm-pass">Confirm New Password</label>
               <input id="confirm-pass" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required className={formInputStyle} />
             </div>
+            {passwordMessage && <Alert type={passwordMessage.type} message={passwordMessage.text} />}
              <div className="flex justify-end items-center gap-4 pt-2">
-                 {passwordMessage && <p className={`text-sm ${passwordMessage.type === 'success' ? 'text-green-400' : 'text-red-400'}`}>{passwordMessage.text}</p>}
-                <button type="submit" className="font-bold py-2 px-5 rounded-full text-gray-900 bg-white hover:bg-gray-200 transition-colors">Change Password</button>
+                <button type="submit" className="font-bold py-2 px-5 rounded-full text-gray-900 bg-white hover:bg-gray-200 transition-colors btn-bounce">Change Password</button>
             </div>
           </form>
         </div>
@@ -281,7 +282,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ user, onUpdatePr
              <Tooltip content="Upload images of recurring models or characters to easily use them in photoshoots.">
               <h2 className="text-2xl font-bold text-white">Model Management</h2>
             </Tooltip>
-            <button onClick={handleUploadClick} className="font-bold py-2 px-5 rounded-full text-gray-900 bg-white hover:bg-gray-200 transition-colors">
+            <button onClick={handleUploadClick} className="font-bold py-2 px-5 rounded-full text-gray-900 bg-white hover:bg-gray-200 transition-colors btn-bounce">
               Upload New Model
             </button>
             <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/png, image/jpeg, image/webp" className="hidden" />
@@ -321,7 +322,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ user, onUpdatePr
               <p className="font-semibold text-white">Delete this account</p>
               <p className="text-sm text-red-300/80">Once you delete your account, there is no going back. Please be certain.</p>
             </div>
-            <button onClick={onDeleteAccount} className="mt-4 md:mt-0 font-bold py-2 px-5 rounded-full bg-red-600 hover:bg-red-700 text-white transition-colors">
+            <button onClick={onDeleteAccount} className="mt-4 md:mt-0 font-bold py-2 px-5 rounded-full bg-red-600 hover:bg-red-700 text-white transition-colors btn-bounce">
                 Delete Account
             </button>
           </div>

@@ -7,6 +7,8 @@ import { PresetSelector } from '../components/PresetSelector';
 import { TemplateSelector } from '../components/TemplateSelector';
 import { EnhancedPromptInput } from '../components/EnhancedPromptInput';
 import { Tooltip } from '../components/Tooltip';
+import { Alert } from '../components/Alert';
+import { MockupPreview } from '../components/MockupPreview';
 
 // Types
 import type { ImageData, User, Template, SessionImage } from '../types';
@@ -28,6 +30,7 @@ interface MockupGeneratorScreenProps {
     setApplyBrandKit: (apply: boolean) => void;
     handleGenerate: () => void;
     onGenerateCopy: (imageSrc: string) => void;
+    onImageClick: (imageSrc: string) => void;
 }
 
 export const MockupGeneratorScreen: React.FC<MockupGeneratorScreenProps> = (props) => {
@@ -54,7 +57,7 @@ export const MockupGeneratorScreen: React.FC<MockupGeneratorScreenProps> = (prop
   return (
       <main className="flex-grow container mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Control Panel */}
-        <div className="lg:col-span-4 bg-black/30 backdrop-blur-2xl border border-white/10 rounded-2xl p-6 shadow-lg flex flex-col gap-6 h-fit sticky top-24">
+        <div className="lg:col-span-4 bg-slate-800/60 backdrop-blur-2xl border border-slate-700 rounded-2xl p-6 shadow-lg flex flex-col gap-6 h-fit sticky top-24">
           <h2 className="text-xl font-bold text-white">AI Mockup Generator</h2>
           
           <div className="grid grid-cols-1 gap-4">
@@ -88,7 +91,7 @@ export const MockupGeneratorScreen: React.FC<MockupGeneratorScreenProps> = (prop
           {brandKitIsSetup && (
             <Tooltip content="Automatically apply your brand colors and font style to the background scene.">
               <div className="flex items-center justify-between bg-black/20 p-3 rounded-lg border border-white/5">
-                  <label htmlFor="apply-brand-kit" className="text-sm font-medium text-gray-200 cursor-pointer">
+                  <label htmlFor="apply-brand-kit" className="text-sm font-medium text-slate-200 cursor-pointer">
                     Apply Brand Kit
                   </label>
                   <button
@@ -97,8 +100,8 @@ export const MockupGeneratorScreen: React.FC<MockupGeneratorScreenProps> = (prop
                     aria-checked={props.applyBrandKit}
                     onClick={() => props.setApplyBrandKit(!props.applyBrandKit)}
                     className={`${
-                      props.applyBrandKit ? 'bg-gray-300' : 'bg-gray-600'
-                    } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 focus:ring-offset-gray-900`}
+                      props.applyBrandKit ? 'bg-sky-500' : 'bg-slate-600'
+                    } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 focus:ring-offset-slate-800`}
                   >
                     <span
                       className={`${
@@ -110,20 +113,25 @@ export const MockupGeneratorScreen: React.FC<MockupGeneratorScreenProps> = (prop
             </Tooltip>
           )}
 
+          {props.error && <Alert type="error" message={props.error} />}
+
           <button
             onClick={props.handleGenerate}
             disabled={!canGenerate}
-            className="w-full font-bold py-3 px-4 rounded-lg text-gray-900 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg btn-bounce"
+            className="w-full font-bold py-3 px-4 rounded-lg text-white bg-sky-500 hover:bg-sky-400 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg btn-bounce"
           >
             {getButtonText()}
           </button>
 
-          {props.error && <p className="text-red-400 text-sm mt-2 text-center">{props.error}</p>}
         </div>
 
-        {/* Image Gallery */}
+        {/* Image Gallery / Preview */}
         <div className="lg:col-span-8">
-          <GeneratedImageGallery images={props.generatedImages} isLoading={props.isLoading} onGenerateCopy={props.onGenerateCopy} />
+          {props.designImage && props.selectedTemplate && props.generatedImages.length === 0 && !props.isLoading ? (
+            <MockupPreview designImage={props.designImage} template={props.selectedTemplate} />
+          ) : (
+            <GeneratedImageGallery images={props.generatedImages} isLoading={props.isLoading} onGenerateCopy={props.onGenerateCopy} onImageClick={props.onImageClick} />
+          )}
         </div>
       </main>
   );

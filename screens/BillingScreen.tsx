@@ -65,7 +65,7 @@ const AddPaymentModal: React.FC<{
                     </div>
                      <div className="flex items-center justify-end gap-4 mt-4">
                         <button type="button" onClick={handleClose} className="bg-white/10 hover:bg-white/20 text-white font-semibold py-2 px-4 rounded-full">Cancel</button>
-                        <button type="submit" className="font-bold py-2 px-5 rounded-full text-gray-900 bg-white">Add Card</button>
+                        <button type="submit" className="font-bold py-2 px-5 rounded-full text-gray-900 bg-white btn-bounce">Add Card</button>
                     </div>
                 </form>
             </div>
@@ -101,9 +101,9 @@ export const BillingScreen: React.FC<BillingScreenProps> = (props) => {
                         <div className="flex justify-between items-center">
                             <h3 className={`text-xl font-bold ${isPro ? 'text-purple-300' : 'text-gray-200'}`}>{subscription?.plan} Plan</h3>
                             {isPro ? 
-                                <button onClick={() => onUpdateSubscription('Free')} className="font-semibold py-2 px-4 rounded-full text-sm text-white bg-white/10 hover:bg-white/20">Downgrade to Free</button>
+                                <button onClick={() => onUpdateSubscription('Free')} className="font-semibold py-2 px-4 rounded-full text-sm text-white bg-white/10 hover:bg-white/20 btn-bounce">Downgrade to Free</button>
                                 :
-                                <button onClick={() => onUpdateSubscription('Pro')} className="font-bold py-2 px-4 rounded-full text-sm text-gray-900 bg-gradient-to-r from-purple-300 to-purple-400 hover:opacity-90">Upgrade to Pro</button>
+                                <button onClick={() => onUpdateSubscription('Pro')} className="font-bold py-2 px-4 rounded-full text-sm text-gray-900 bg-gradient-to-r from-purple-300 to-purple-400 hover:opacity-90 btn-bounce">Upgrade to Pro</button>
                             }
                         </div>
                         <p className="text-sm text-gray-400 mt-2">
@@ -142,11 +142,11 @@ export const BillingScreen: React.FC<BillingScreenProps> = (props) => {
                 <div className="bg-black/30 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-lg p-6">
                      <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2"><CreditIcon className="w-5 h-5"/>Buy Credits</h2>
                      <div className="space-y-3">
-                        <button onClick={() => onBuyCredits(100, 10)} className="w-full flex justify-between items-center p-3 bg-white/5 hover:bg-white/10 rounded-lg transition-colors">
+                        <button onClick={() => onBuyCredits(100, 10)} className="w-full flex justify-between items-center p-3 bg-white/5 hover:bg-white/10 rounded-lg transition-colors btn-bounce">
                            <span><span className="font-bold">100</span> Credits</span>
                            <span className="font-bold bg-white/10 px-2 py-0.5 rounded-md">$10.00</span>
                         </button>
-                        <button onClick={() => onBuyCredits(250, 20)} className="w-full flex justify-between items-center p-3 bg-white/5 hover:bg-white/10 rounded-lg transition-colors">
+                        <button onClick={() => onBuyCredits(250, 20)} className="w-full flex justify-between items-center p-3 bg-white/5 hover:bg-white/10 rounded-lg transition-colors btn-bounce">
                            <span><span className="font-bold">250</span> Credits</span>
                            <span className="font-bold bg-white/10 px-2 py-0.5 rounded-md">$20.00</span>
                         </button>
@@ -172,7 +172,7 @@ export const BillingScreen: React.FC<BillingScreenProps> = (props) => {
                              <p className="text-center text-gray-400 text-sm py-2">No payment methods on file.</p>
                         )}
                     </div>
-                    <button onClick={() => setIsModalOpen(true)} className="w-full flex items-center justify-center gap-2 font-semibold py-2 px-4 rounded-lg text-sm text-white bg-white/10 hover:bg-white/20 transition-colors">
+                    <button onClick={() => setIsModalOpen(true)} className="w-full flex items-center justify-center gap-2 font-semibold py-2 px-4 rounded-lg text-sm text-white bg-white/10 hover:bg-white/20 transition-colors btn-bounce">
                         <PlusIcon className="w-4 h-4"/> Add New Card
                     </button>
                 </div>

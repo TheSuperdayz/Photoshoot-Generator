@@ -1,5 +1,3 @@
-
-
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { GoogleGenAI } from "@google/genai";
 import type { Chat } from "@google/genai";
@@ -10,6 +8,8 @@ import { Footer } from './components/Footer';
 import { CopywriterModal } from './components/CopywriterModal';
 import { ReminderToast } from './components/ReminderToast';
 import { OnboardingModal } from './components/OnboardingModal';
+import { Alert } from './components/Alert';
+import { ImageZoomModal } from './components/ImageZoomModal';
 
 // Screens
 import { LandingScreen } from './screens/LandingScreen';
@@ -33,6 +33,8 @@ import { generatePhotoshootImage, generateMockupImage, generateImageFromPrompt, 
 
 // Types
 import type { ImageData, User, Template, ChatMessage, CreativeIdea, CopywritingResult, GenerationHistoryItem, ToDoItem, AIModel, BrandKit, SubscriptionPlan, PaymentMethod, BillingHistoryItem, GeneratedImageItem, SessionImage, AppView } from './types';
+
+const HISTORY_LIMIT = 50; // A reasonable limit for localStorage
 
 /**
  * Adds a text watermark to a base64 encoded image.
@@ -153,6 +155,9 @@ const App: React.FC = () => {
   const [toDoList, setToDoList] = useState<ToDoItem[]>([]);
   const [reminderToast, setReminderToast] = useState<ToDoItem | null>(null);
 
+  // Image Zoom Modal State
+  const [zoomedImageSrc, setZoomedImageSrc] = useState<string | null>(null);
+
   // Parallax background ref
   const auroraContainerRef = useRef<HTMLDivElement>(null);
 
@@ -241,7 +246,12 @@ const App: React.FC = () => {
   // Persist generation history separately.
   useEffect(() => {
     if (user?.email) {
-      localStorage.setItem(`superdayzHistory_${user.email}`, JSON.stringify(generationHistory));
+      try {
+        localStorage.setItem(`superdayzHistory_${user.email}`, JSON.stringify(generationHistory));
+      } catch (error) {
+        console.error("Error saving history to localStorage:", error);
+        setError("Your session history could not be saved, likely because browser storage is full. Older history items might be removed.");
+      }
     }
   }, [generationHistory, user?.email]);
   
@@ -263,7 +273,7 @@ const App: React.FC = () => {
 
   const addItemsToHistory = useCallback((items: GenerationHistoryItem[]) => {
       if (items.length === 0) return;
-      setGenerationHistory(prev => [...items, ...prev]);
+      setGenerationHistory(prev => [...items, ...prev].slice(0, HISTORY_LIMIT));
   }, []);
 
   // Initial load effect
@@ -362,6 +372,10 @@ const App: React.FC = () => {
 
 
   const handleLogin = (email: string, pass: string) => {
+    if (!navigator.onLine) {
+      setAuthError("You appear to be offline. Please check your internet connection.");
+      return;
+    }
     const users = JSON.parse(localStorage.getItem('superdayzUsers') || '{}');
     if (users[email] && users[email].password === pass) {
         setAuthError(null);
@@ -404,6 +418,10 @@ const App: React.FC = () => {
   };
 
   const handleRegister = (name: string, role: string, email: string, pass: string) => {
+    if (!navigator.onLine) {
+      setAuthError("You appear to be offline. Please check your internet connection.");
+      return;
+    }
     const users = JSON.parse(localStorage.getItem('superdayzUsers') || '{}');
      if (users[email]) {
         setAuthError('An account with this email already exists.');
@@ -593,6 +611,10 @@ const App: React.FC = () => {
   // ------------------------------------
 
   const handleGeneratePhotoshoot = useCallback(async () => {
+    if (!navigator.onLine) {
+      setError("You appear to be offline. Please check your internet connection.");
+      return;
+    }
     if (!productImage || !modelImage || !user) {
       setError('Please upload a product image and a model image.');
       return;
@@ -652,6 +674,10 @@ const App: React.FC = () => {
 
 
   const handleGenerateMockup = useCallback(async () => {
+    if (!navigator.onLine) {
+      setError("You appear to be offline. Please check your internet connection.");
+      return;
+    }
     if (!designImage || !selectedTemplate || !user) {
       setError('Please upload a design and select a template.');
       return;
@@ -711,6 +737,10 @@ const App: React.FC = () => {
   }, [designImage, selectedTemplate, user, backgroundStyle, customBackground, applyBrandKit, deductCredit, addItemsToHistory]);
 
   const handleGenerateImage = useCallback(async () => {
+    if (!navigator.onLine) {
+      setError("You appear to be offline. Please check your internet connection.");
+      return;
+    }
     if (!prompt.trim() || !user) {
       setError('Please enter a prompt.');
       return;
@@ -758,6 +788,10 @@ const App: React.FC = () => {
   }, [prompt, user, stylePreset, aspectRatio, applyBrandKit, deductCredit, addItemsToHistory]);
 
   const handleSendMessage = useCallback(async (message: string) => {
+      if (!navigator.onLine) {
+        setError("You appear to be offline. Please check your internet connection.");
+        return;
+      }
       if (!chatInstance || isLoading || !message.trim()) return;
       if (user && user.credits <= 0) {
         setError('You are out of credits. Please get more to continue.');
@@ -808,6 +842,10 @@ const App: React.FC = () => {
   }, [chatInstance, user, isLoading, deductCredit]);
 
   const handleGenerateIdeas = useCallback(async () => {
+    if (!navigator.onLine) {
+      setError("You appear to be offline. Please check your internet connection.");
+      return;
+    }
     if (!ideaTopic.trim() || !user) {
       setError('Please enter a topic to get ideas.');
       return;
@@ -845,11 +883,14 @@ const App: React.FC = () => {
   }, [ideaTopic, ideaType, user, deductCredit, addItemsToHistory]);
 
   const handleGenerateCopy = useCallback(async (topic: string, type: string, imageBase64?: string) => {
+    if (!navigator.onLine) {
+      throw new Error("You appear to be offline. Please check your internet connection.");
+    }
     if (!topic.trim() || !user) {
-      return Promise.reject(new Error('Please enter a topic.'));
+      throw new Error('Please enter a topic.');
     }
     if (user.credits <= 0) {
-      return Promise.reject(new Error('You are out of credits.'));
+      throw new Error('You are out of credits.');
     }
   
     const imageData = imageBase64 ? { base64: imageBase64, mimeType: 'image/jpeg' } : undefined;
@@ -887,6 +928,9 @@ const App: React.FC = () => {
     }
   }, [selectedImageForCopy, handleGenerateCopy]);
 
+  const handleZoomImage = (src: string) => {
+    setZoomedImageSrc(src);
+  };
 
   const renderContent = () => {
     switch (view) {
@@ -909,7 +953,7 @@ const App: React.FC = () => {
             .map(item => item.src);
 
           return (
-            <div className="text-gray-100 flex flex-col flex-grow">
+            <div className="text-gray-200 flex flex-col flex-grow">
               <Header
                 user={user}
                 onLogout={handleLogout}
@@ -950,6 +994,7 @@ const App: React.FC = () => {
                   setApplyBrandKit={setApplyBrandKit}
                   handleGenerate={handleGeneratePhotoshoot}
                   onGenerateCopy={handleOpenCopyModal}
+                  onImageClick={handleZoomImage}
                 />
               )}
               {view === 'mockup' && (
@@ -970,6 +1015,7 @@ const App: React.FC = () => {
                     setApplyBrandKit={setApplyBrandKit}
                     handleGenerate={handleGenerateMockup}
                     onGenerateCopy={handleOpenCopyModal}
+                    onImageClick={handleZoomImage}
                   />
               )}
                {view === 'imageGenerator' && (
@@ -988,6 +1034,7 @@ const App: React.FC = () => {
                     setApplyBrandKit={setApplyBrandKit}
                     handleGenerate={handleGenerateImage}
                     onGenerateCopy={handleOpenCopyModal}
+                    onImageClick={handleZoomImage}
                   />
               )}
               {view === 'aiTalk' && (
@@ -1041,7 +1088,7 @@ const App: React.FC = () => {
                 />
               )}
               {view === 'history' && (
-                  <HistoryScreen history={generationHistory} />
+                  <HistoryScreen history={generationHistory} onImageClick={handleZoomImage} />
               )}
               {view === 'todo' && (
                   <ToDoScreen todos={toDoList} onUpdateToDos={handleUpdateToDos} />
@@ -1078,7 +1125,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="bg-black min-h-screen flex flex-col relative overflow-x-hidden" style={{ perspective: '2000px' }}>
+    <div className="bg-slate-900 min-h-screen flex flex-col relative overflow-x-hidden" style={{ perspective: '2000px' }}>
       <div className="aurora-background" aria-hidden="true">
         <div
           ref={auroraContainerRef}
@@ -1099,8 +1146,16 @@ const App: React.FC = () => {
       )}
       {user && reminderToast && <ReminderToast todo={reminderToast} onClose={() => setReminderToast(null)} />}
 
+      <ImageZoomModal 
+        isOpen={!!zoomedImageSrc}
+        onClose={() => setZoomedImageSrc(null)}
+        imageSrc={zoomedImageSrc}
+      />
+
       <div className="flex-grow flex flex-col z-10">
-        {renderContent()}
+        <div key={view} className="flex-grow flex flex-col animate-slideInDown">
+          {renderContent()}
+        </div>
       </div>
       <Footer />
     </div>

@@ -92,12 +92,12 @@ const ToolCard: React.FC<{ icon: React.ReactNode; title: string; onClick?: () =>
       onMouseLeave={handleMouseLeave}
       onClick={onClick}
       disabled={disabled}
-      className={`relative bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-xl flex flex-col items-center justify-center text-center transform-gpu card-3d-tilt ${
+      className={`relative bg-slate-800/60 backdrop-blur-md border border-slate-700 p-6 rounded-xl flex flex-col items-center justify-center text-center transform-gpu card-3d-tilt ${
         disabled ? 'opacity-50 cursor-not-allowed' : ''
       }`}
     >
       <div className="absolute inset-0 rounded-xl card-3d-glow" />
-      <div className="text-gray-300 mb-3" style={{ transform: 'translateZ(20px)' }}>{icon}</div>
+      <div className="text-slate-300 mb-3" style={{ transform: 'translateZ(20px)' }}>{icon}</div>
       <h3 className="font-semibold text-white" style={{ transform: 'translateZ(10px)' }}>{title}</h3>
     </button>
   );
@@ -169,7 +169,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, recentCr
           <h2 className="text-2xl font-bold text-white mb-6">Recent creations</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {recentCreations.slice(0, 6).map((image, index) => (
-              <div key={index} className="aspect-square bg-gray-800 rounded-lg overflow-hidden">
+              <div key={index} className="aspect-square bg-slate-800 rounded-lg overflow-hidden">
                 <img src={image} alt={`Recent creation ${index + 1}`} className="w-full h-full object-cover" />
               </div>
             ))}

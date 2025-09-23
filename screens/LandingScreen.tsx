@@ -43,7 +43,7 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({ onGetStarted }) =>
         </p>
         <button 
           onClick={onGetStarted}
-          className="font-bold py-3 px-8 rounded-full text-gray-900 bg-gradient-to-r from-gray-200 to-white hover:from-gray-300 hover:to-gray-100 transition-all duration-300 transform hover:scale-105 shadow-lg text-lg"
+          className="font-bold py-3 px-8 rounded-full text-gray-900 bg-gradient-to-r from-gray-200 to-white hover:from-gray-300 hover:to-gray-100 transition-all duration-300 shadow-lg text-lg btn-bounce"
           style={{ transform: 'translateZ(20px)' }}
         >
           Get Started

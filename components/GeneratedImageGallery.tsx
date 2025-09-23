@@ -8,27 +8,33 @@ interface GeneratedImageGalleryProps {
   images: SessionImage[];
   isLoading: boolean;
   onGenerateCopy: (imageSrc: string) => void;
+  onImageClick: (imageSrc: string) => void;
 }
 
-const GalleryItem: React.FC<{ src: string; onGenerateCopy: (src: string) => void; index: number; }> = ({ src, onGenerateCopy, index }) => {
+const GalleryItem: React.FC<{ src: string; onGenerateCopy: (src: string) => void; onImageClick: (src: string) => void; index: number; }> = ({ src, onGenerateCopy, onImageClick, index }) => {
   return (
     <div 
-      className="relative group aspect-square bg-white/5 rounded-lg overflow-hidden shadow-lg transition-transform duration-300 hover:scale-105 animate-item-enter"
+      className="relative group aspect-square bg-white/5 rounded-lg overflow-hidden shadow-lg transition-transform duration-300 hover:scale-105 animate-item-enter cursor-zoom-in"
       style={{ animationDelay: `${Math.min(index * 50, 500)}ms`, animationFillMode: 'backwards' }}
+      onClick={() => onImageClick(src)}
     >
       <img src={src} alt="Generated photoshoot" className="w-full h-full object-cover" />
-      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-2">
+      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-2 pointer-events-none">
         <a
           href={src}
           download={`superdayz-photo-${Date.now()}.png`}
-          className="flex items-center gap-2 bg-white/20 backdrop-blur-sm text-white font-semibold py-2 px-3 rounded-full hover:bg-white/30 transition-colors"
+          className="flex items-center gap-2 bg-white/20 backdrop-blur-sm text-white font-semibold py-2 px-3 rounded-full hover:bg-white/30 transition-colors pointer-events-auto"
           title="Download Image"
+          onClick={(e) => e.stopPropagation()}
         >
           <DownloadIcon className="w-5 h-5" />
         </a>
         <button
-          onClick={() => onGenerateCopy(src)}
-          className="flex items-center gap-2 bg-white/20 backdrop-blur-sm text-white font-semibold py-2 px-3 rounded-full hover:bg-white/30 transition-colors"
+          onClick={(e) => {
+            e.stopPropagation();
+            onGenerateCopy(src);
+          }}
+          className="flex items-center gap-2 bg-white/20 backdrop-blur-sm text-white font-semibold py-2 px-3 rounded-full hover:bg-white/30 transition-colors pointer-events-auto"
           title="Write Copy for this Image"
         >
           <QuillIcon className="w-5 h-5" />
@@ -38,7 +44,7 @@ const GalleryItem: React.FC<{ src: string; onGenerateCopy: (src: string) => void
   );
 };
 
-export const GeneratedImageGallery: React.FC<GeneratedImageGalleryProps> = ({ images, isLoading, onGenerateCopy }) => {
+export const GeneratedImageGallery: React.FC<GeneratedImageGalleryProps> = ({ images, isLoading, onGenerateCopy, onImageClick }) => {
   if (isLoading && images.length === 0) {
     return (
       <div className="w-full h-[60vh] flex flex-col items-center justify-center bg-white/5 backdrop-blur-lg rounded-2xl">
@@ -70,7 +76,7 @@ export const GeneratedImageGallery: React.FC<GeneratedImageGalleryProps> = ({ im
         </div>
       )}
       {images.map((image, index) => (
-        <GalleryItem key={image.id} src={image.src} index={index} onGenerateCopy={() => onGenerateCopy(image.src)} />
+        <GalleryItem key={image.id} src={image.src} index={index} onGenerateCopy={() => onGenerateCopy(image.src)} onImageClick={onImageClick} />
       ))}
     </div>
   );

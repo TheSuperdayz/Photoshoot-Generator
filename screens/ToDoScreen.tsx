@@ -21,6 +21,7 @@ const ToDoModal: React.FC<{
     const [description, setDescription] = useState('');
     const [dueDate, setDueDate] = useState('');
     const [reminder, setReminder] = useState<ToDoItem['reminder']>('none');
+    const [isClosing, setIsClosing] = useState(false);
 
     React.useEffect(() => {
         if (todo) {
@@ -39,18 +40,26 @@ const ToDoModal: React.FC<{
         }
     }, [todo, isOpen]);
 
-    if (!isOpen) return null;
+    const handleClose = () => {
+        setIsClosing(true);
+        setTimeout(() => {
+            setIsClosing(false);
+            onClose();
+        }, 200);
+    };
+
+    if (!isOpen && !isClosing) return null;
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!title.trim()) return;
         onSave({ id: todo?.id, title, description, dueDate, reminder });
-        onClose();
+        handleClose();
     };
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
-            <div className="bg-gray-950/80 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-xl w-full max-w-md p-8" onClick={(e) => e.stopPropagation()}>
+        <div className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`} onClick={handleClose}>
+            <div className={`bg-gray-950/80 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-xl w-full max-w-md p-8 ${isClosing ? 'animate-scale-out' : 'animate-scale-in'}`} onClick={(e) => e.stopPropagation()}>
                 <h2 className="text-2xl font-bold text-white mb-6">{todo ? 'Edit Task' : 'Add New Task'}</h2>
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                     <div>
@@ -80,8 +89,8 @@ const ToDoModal: React.FC<{
                         </select>
                     </div>
                     <div className="flex items-center justify-end gap-4 mt-4">
-                        <button type="button" onClick={onClose} className="bg-white/10 hover:bg-white/20 text-white font-semibold py-2 px-4 rounded-full">Cancel</button>
-                        <button type="submit" className="font-bold py-2 px-5 rounded-full text-gray-900 bg-white">Save Task</button>
+                        <button type="button" onClick={handleClose} className="bg-white/10 hover:bg-white/20 text-white font-semibold py-2 px-4 rounded-full">Cancel</button>
+                        <button type="submit" className="font-bold py-2 px-5 rounded-full text-gray-900 bg-white btn-bounce">Save Task</button>
                     </div>
                 </form>
             </div>
@@ -161,7 +170,7 @@ export const ToDoScreen: React.FC<ToDoScreenProps> = ({ todos, onUpdateToDos }) 
                     <h2 className="text-2xl font-bold w-48 text-center">{currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</h2>
                     <button onClick={() => changeMonth(1)} className="p-2 rounded-md bg-white/10 hover:bg-white/20">&gt;</button>
                 </div>
-                <button onClick={() => { setEditingTodo(null); setIsModalOpen(true); }} className="flex items-center gap-2 font-bold py-2 px-4 rounded-full text-gray-900 bg-white hover:bg-gray-200 transition-colors">
+                <button onClick={() => { setEditingTodo(null); setIsModalOpen(true); }} className="flex items-center gap-2 font-bold py-2 px-4 rounded-full text-gray-900 bg-white hover:bg-gray-200 transition-colors btn-bounce">
                     <PlusIcon className="w-5 h-5" />
                     <span>Add Task</span>
                 </button>

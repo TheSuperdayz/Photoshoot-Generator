@@ -6,6 +6,7 @@ import { LoadingSpinner } from '../components/LoadingSpinner';
 import { QuillIcon } from '../components/icons/QuillIcon';
 import { ClipboardIcon } from '../components/icons/ClipboardIcon';
 import { EnhancedPromptInput } from '../components/EnhancedPromptInput';
+import { Alert } from '../components/Alert';
 
 // Types
 import type { User, CopywritingResult } from '../types';
@@ -58,16 +59,16 @@ const CopyResultCard: React.FC<{ result: CopywritingResult }> = ({ result }) => 
           ref={cardRef}
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
-          className="bg-white/10 backdrop-blur-lg border border-white/10 rounded-xl p-6 relative group transition-transform duration-100 card-3d-tilt"
+          className="bg-slate-800/80 backdrop-blur-lg border border-slate-700 rounded-xl p-6 relative group transition-transform duration-100 card-3d-tilt"
         >
             <div className="absolute inset-0 rounded-xl card-3d-glow" />
             <div style={{ transform: 'translateZ(20px)' }}>
                 <h3 className="text-lg font-bold text-white mb-2">{result.title}</h3>
-                <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">{result.content}</p>
+                <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">{result.content}</p>
             </div>
             <button
                 onClick={handleCopy}
-                className="absolute top-4 right-4 bg-white/10 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute top-4 right-4 bg-slate-700/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                 aria-label="Copy content"
                 style={{ transform: 'translateZ(30px)' }}
             >
@@ -104,11 +105,11 @@ export const CopywriterScreen: React.FC<CopywriterScreenProps> = (props) => {
                 {/* Header */}
                 <div className="text-center mb-10">
                     <h1 className="text-4xl font-extrabold text-white tracking-tight">AI Copywriting Assistant</h1>
-                    <p className="mt-4 text-lg text-gray-400">Generate compelling marketing copy in seconds. From social media captions to ad headlines, let AI do the writing.</p>
+                    <p className="mt-4 text-lg text-slate-400">Generate compelling marketing copy in seconds. From social media captions to ad headlines, let AI do the writing.</p>
                 </div>
 
                 {/* Control Panel */}
-                <div className="bg-black/30 backdrop-blur-2xl border border-white/10 rounded-2xl p-6 shadow-lg flex flex-col gap-6 mb-12">
+                <div className="bg-slate-800/60 backdrop-blur-2xl border border-slate-700 rounded-2xl p-6 shadow-lg flex flex-col gap-6 mb-12">
                      <EnhancedPromptInput
                         label="Your Topic or Product"
                         value={props.topic}
@@ -125,14 +126,15 @@ export const CopywriterScreen: React.FC<CopywriterScreenProps> = (props) => {
 
                     <PresetSelector label="What kind of copy do you need?" options={copyTypeOptions} selectedOption={props.copyType} onSelect={props.setCopyType} tooltips={copyTypeTooltips} />
 
+                    {props.error && <Alert type="error" message={props.error} />}
+
                     <button
                         onClick={props.handleGenerate}
                         disabled={!canGenerate}
-                        className="w-full font-bold py-3 px-4 rounded-lg text-gray-900 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg btn-bounce"
+                        className="w-full font-bold py-3 px-4 rounded-lg text-white bg-sky-500 hover:bg-sky-400 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg btn-bounce"
                     >
                         {getButtonText()}
                     </button>
-                    {props.error && <p className="text-red-400 text-sm -mt-2 text-center">{props.error}</p>}
                 </div>
 
                 {/* Copy Results */}
@@ -140,23 +142,23 @@ export const CopywriterScreen: React.FC<CopywriterScreenProps> = (props) => {
                     {props.isLoading && props.generatedCopy.length === 0 && (
                         <div className="flex flex-col items-center justify-center text-center py-16">
                             <LoadingSpinner />
-                            <p className="text-lg text-gray-400 mt-4">Writing in progress...</p>
-                            <p className="text-sm text-gray-500">Our AI copywriter is crafting the perfect words for you!</p>
+                            <p className="text-lg text-slate-400 mt-4">Writing in progress...</p>
+                            <p className="text-sm text-slate-500">Our AI copywriter is crafting the perfect words for you!</p>
                         </div>
                     )}
 
                     {!props.isLoading && props.generatedCopy.length === 0 && (
-                        <div className="text-center py-16 bg-white/5 rounded-2xl border-2 border-dashed border-gray-700">
-                           <QuillIcon className="w-16 h-16 text-gray-600 mx-auto" />
-                           <h3 className="mt-4 text-xl font-semibold text-gray-300">Your generated copy will appear here</h3>
-                           <p className="mt-1 text-gray-500">Fill out the form above to get started.</p>
+                        <div className="text-center py-16 bg-slate-800/50 rounded-2xl border-2 border-dashed border-slate-700">
+                           <QuillIcon className="w-16 h-16 text-slate-600 mx-auto" />
+                           <h3 className="mt-4 text-xl font-semibold text-slate-300">Your generated copy will appear here</h3>
+                           <p className="mt-1 text-slate-500">Fill out the form above to get started.</p>
                         </div>
                     )}
 
                     {props.generatedCopy.length > 0 && (
                         <div className="grid grid-cols-1 gap-6">
                             {props.isLoading && (
-                                <div className="bg-white/10 rounded-xl p-6 flex items-center justify-center text-gray-300">
+                                <div className="bg-slate-800/80 rounded-xl p-6 flex items-center justify-center text-slate-300">
                                    <LoadingSpinner />
                                    <span className="ml-4">Generating more copy...</span>
                                 </div>

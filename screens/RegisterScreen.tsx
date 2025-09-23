@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Logo } from '../components/Logo';
+import { Alert } from '../components/Alert';
 
 interface RegisterScreenProps {
   onRegister: (name: string, role: string, email: string, pass: string) => void;
@@ -58,72 +59,74 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegister, onSw
       <div className="w-full max-w-md">
         <div className="text-center mb-8 flex flex-col items-center">
             <Logo className="h-16 mb-4"/>
-            <p className="text-gray-400 mt-2">Create an account to start generating.</p>
+            <p className="text-slate-400 mt-2">Create an account to start generating.</p>
         </div>
         <form 
           ref={panelRef}
           onSubmit={handleSubmit}
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
-          className="relative bg-black/30 backdrop-blur-2xl border border-white/10 shadow-2xl rounded-2xl px-8 pt-6 pb-8 mb-4 card-3d-tilt"
+          className="relative bg-slate-800/60 backdrop-blur-2xl border border-slate-700 shadow-2xl rounded-2xl px-8 pt-6 pb-8 mb-4 card-3d-tilt"
         >
           <div className="absolute inset-0 rounded-2xl card-3d-glow" />
           <div className="mb-4">
-            <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="name">
+            <label className="block text-slate-300 text-sm font-bold mb-2" htmlFor="name">
               Full Name
             </label>
             <input
-              className="w-full bg-black/20 border border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-gray-400 focus:border-gray-400 transition duration-200 placeholder-gray-500"
+              className="w-full bg-slate-800 border border-slate-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition duration-200 placeholder-slate-400"
               id="name" type="text" placeholder="Your Name" value={name} onChange={(e) => setName(e.target.value)}
               onFocus={handleFocus} onBlur={handleBlur} required />
           </div>
            <div className="mb-4">
-            <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="role">
+            <label className="block text-slate-300 text-sm font-bold mb-2" htmlFor="role">
               Your Role (e.g., Photographer)
             </label>
             <input
-              className="w-full bg-black/20 border border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-gray-400 focus:border-gray-400 transition duration-200 placeholder-gray-500"
+              className="w-full bg-slate-800 border border-slate-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition duration-200 placeholder-slate-400"
               id="role" type="text" placeholder="Art Director, Brand Manager..." value={role} onChange={(e) => setRole(e.target.value)}
               onFocus={handleFocus} onBlur={handleBlur} required />
           </div>
           <div className="mb-4">
-            <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="email">
+            <label className="block text-slate-300 text-sm font-bold mb-2" htmlFor="email">
               Email
             </label>
             <input
-              className="w-full bg-black/20 border border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-gray-400 focus:border-gray-400 transition duration-200 placeholder-gray-500"
+              className="w-full bg-slate-800 border border-slate-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition duration-200 placeholder-slate-400"
               id="email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)}
               onFocus={handleFocus} onBlur={handleBlur} required />
           </div>
           <div className="mb-4">
-            <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="password">
+            <label className="block text-slate-300 text-sm font-bold mb-2" htmlFor="password">
               Password
             </label>
             <input
-              className="w-full bg-black/20 border border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-gray-400 focus:border-gray-400 transition duration-200 placeholder-gray-500"
+              className="w-full bg-slate-800 border border-slate-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition duration-200 placeholder-slate-400"
               id="password" type="password" placeholder="******************" value={password} onChange={(e) => setPassword(e.target.value)}
               onFocus={handleFocus} onBlur={handleBlur} required />
           </div>
            <div className="mb-6">
-            <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="confirm-password">
+            <label className="block text-slate-300 text-sm font-bold mb-2" htmlFor="confirm-password">
               Confirm Password
             </label>
             <input
-              className="w-full bg-black/20 border border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-gray-400 focus:border-gray-400 transition duration-200 placeholder-gray-500"
+              className="w-full bg-slate-800 border border-slate-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition duration-200 placeholder-slate-400"
               id="confirm-password" type="password" placeholder="******************" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
               onFocus={handleFocus} onBlur={handleBlur} required />
           </div>
-           {error && <p className="text-red-400 text-xs italic mb-4 text-center">{error}</p>}
-           {passError && <p className="text-red-400 text-xs italic mb-4 text-center">{passError}</p>}
+           <div className="space-y-4 mb-4">
+              {error && <Alert type="error" message={error} />}
+              {passError && <Alert type="error" message={passError} />}
+           </div>
           <div className="flex items-center justify-between">
-            <button className="w-full font-bold py-3 px-4 rounded-lg text-gray-900 bg-gradient-to-r from-gray-200 to-white hover:from-gray-300 hover:to-gray-100 transition-all duration-300 transform hover:scale-105 shadow-lg" type="submit">
+            <button className="w-full font-bold py-3 px-4 rounded-lg text-white bg-sky-500 hover:bg-sky-400 transition-all duration-300 shadow-lg btn-bounce" type="submit">
               Register
             </button>
           </div>
         </form>
-        <p className="text-center text-gray-500 text-sm">
+        <p className="text-center text-slate-400 text-sm">
           Already have an account?{' '}
-          <button onClick={onSwitchToLogin} className="font-bold text-gray-300 hover:text-white">
+          <button onClick={onSwitchToLogin} className="font-bold text-slate-200 hover:text-white">
             Login
           </button>
         </p>

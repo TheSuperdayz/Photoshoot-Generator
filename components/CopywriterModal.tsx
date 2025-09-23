@@ -3,6 +3,7 @@ import type { User, CopywritingResult } from '../types';
 import { PresetSelector } from './PresetSelector';
 import { ClipboardIcon } from './icons/ClipboardIcon';
 import { LoadingSpinner } from './LoadingSpinner';
+import { Alert } from './Alert';
 
 interface CopywriterModalProps {
     isOpen: boolean;
@@ -96,7 +97,7 @@ export const CopywriterModal: React.FC<CopywriterModalProps> = ({ isOpen, onClos
         setTimeout(() => {
             setIsClosing(false);
             onClose();
-        }, 200);
+        }, 300);
     };
 
     if (!isOpen && !isClosing) return null;
@@ -143,10 +144,11 @@ export const CopywriterModal: React.FC<CopywriterModalProps> = ({ isOpen, onClos
                         </div>
                         <PresetSelector label="Copy Type" options={copyTypeOptions} selectedOption={copyType} onSelect={setCopyType} />
                         
+                        {error && <Alert type="error" message={error} />}
+
                         <button onClick={handleGenerateClick} disabled={!canGenerate} className="w-full font-bold py-3 px-4 rounded-lg text-gray-900 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed btn-bounce">
                             {getButtonText()}
                         </button>
-                         {error && <p className="text-red-400 text-sm -mt-2 text-center">{error}</p>}
                     </div>
 
                     {/* Results */}
@@ -167,7 +169,7 @@ export const CopywriterModal: React.FC<CopywriterModalProps> = ({ isOpen, onClos
                             <CopyResultCard key={index} result={result} />
                         ))}
                          {isLoading && results.length > 0 && (
-                            <div className="bg-white/5 rounded-lg p-4 flex items-center justify-center text-gray-300">
+                            <div className="bg-white/5 rounded-lg p-4 flex items-center justify-center text-gray-300 animate-fade-in">
                                 <LoadingSpinner />
                                 <span className="ml-4 text-sm">Generating more...</span>
                             </div>

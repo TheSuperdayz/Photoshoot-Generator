@@ -5,6 +5,7 @@ import { PersonalitySelector } from '../components/PersonalitySelector';
 import { SendIcon } from '../components/icons/SendIcon';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { Tooltip } from '../components/Tooltip';
+import { Alert } from '../components/Alert';
 
 // Types
 import type { User, ChatMessage } from '../types';
@@ -54,7 +55,7 @@ export const AITalkScreen: React.FC<AITalkScreenProps> = (props) => {
         <main className="flex-grow flex flex-col h-[calc(100vh-4rem)]">
             <div className="container mx-auto w-full max-w-4xl flex-grow flex flex-col p-4">
                 {/* Header/Selector */}
-                <div className="flex-shrink-0 pb-4 border-b border-white/10">
+                <div className="flex-shrink-0 pb-4 border-b border-slate-700">
                     <h1 className="text-xl font-bold text-center mb-4">Talk with AI</h1>
                     <PersonalitySelector
                         selectedPersonality={props.selectedPersonality}
@@ -75,8 +76,8 @@ export const AITalkScreen: React.FC<AITalkScreenProps> = (props) => {
                             <div
                                 className={`max-w-md lg:max-w-lg p-3 rounded-2xl text-white whitespace-pre-wrap break-words ${
                                     msg.role === 'user'
-                                        ? 'bg-blue-600/80 rounded-br-lg'
-                                        : 'bg-white/10 rounded-bl-lg'
+                                        ? 'bg-sky-600 rounded-br-lg'
+                                        : 'bg-slate-700 rounded-bl-lg'
                                 }`}
                             >
                                 {msg.text}
@@ -91,7 +92,7 @@ export const AITalkScreen: React.FC<AITalkScreenProps> = (props) => {
 
                 {/* Input Area */}
                 <div className="flex-shrink-0 pt-4 mt-auto">
-                     {props.error && <p className="text-red-400 text-xs text-center mb-2">{props.error}</p>}
+                     {props.error && <div className="mb-2"><Alert type="error" message={props.error} /></div>}
                     <form onSubmit={handleFormSubmit} className="relative">
                         <Tooltip content="Ask the AI anything! You can ask for advice, brainstorm ideas, or just have a chat.">
                             <input
@@ -99,17 +100,17 @@ export const AITalkScreen: React.FC<AITalkScreenProps> = (props) => {
                                 value={props.currentMessage}
                                 onChange={(e) => props.setCurrentMessage(e.target.value)}
                                 placeholder={`Message ${props.selectedPersonality}...`}
-                                className="w-full bg-black/30 backdrop-blur-2xl border border-white/10 rounded-full py-3 pl-5 pr-14 text-white placeholder-gray-400 focus:ring-2 focus:ring-gray-400 focus:outline-none transition"
+                                className="w-full bg-slate-800 border border-slate-600 rounded-full py-3 pl-5 pr-14 text-white placeholder-slate-400 focus:ring-2 focus:ring-sky-500 focus:outline-none transition"
                                 disabled={props.isLoading || (props.user && props.user.credits <= 0)}
                             />
                         </Tooltip>
                         <button
                             type="submit"
                             disabled={props.isLoading || !props.currentMessage.trim() || (props.user && props.user.credits <= 0)}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 bg-gray-200 text-gray-900 rounded-full p-2 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white transition-colors"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 bg-slate-200 text-slate-900 rounded-full p-2 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white transition-colors"
                             aria-label="Send message"
                         >
-                           {props.isLoading ? <div className="w-5 h-5 animate-spin rounded-full border-2 border-gray-900 border-t-transparent"></div> : <SendIcon className="w-5 h-5" />}
+                           {props.isLoading ? <div className="w-5 h-5 animate-spin rounded-full border-2 border-slate-900 border-t-transparent"></div> : <SendIcon className="w-5 h-5" />}
                         </button>
                     </form>
                 </div>
