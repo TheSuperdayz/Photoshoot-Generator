@@ -1,13 +1,19 @@
-import React, { useState, useRef } from 'react';
+
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import type { GenerationHistoryItem, GenerationType } from '../types';
 import { HistoryIcon } from '../components/icons/HistoryIcon';
 import { SearchIcon } from '../components/icons/SearchIcon';
 import { DownloadIcon } from '../components/icons/DownloadIcon';
 import { ClipboardIcon } from '../components/icons/ClipboardIcon';
+import { PencilIcon } from '../components/icons/PencilIcon';
+import { TagIcon } from '../components/icons/TagIcon';
+import { FolderIcon } from '../components/icons/FolderIcon';
 
 interface HistoryScreenProps {
   history: GenerationHistoryItem[];
   onImageClick: (imageSrc: string) => void;
+  onEditImage: (id: string, imageSrc: string) => void;
+  onUpdateTags: (assetId: string, newTags: string[]) => void;
 }
 
 type FilterType = 'all' | GenerationType;
@@ -17,6 +23,13 @@ const typeLabels: { [key in GenerationType]: string } = {
   'mockup': 'Mockup',
   'image': 'Image',
   'idea': 'Idea',
+  'copy': 'Copy',
+  'edit': 'Edit',
+  'pose': 'Pose',
+  'group': 'Group',
+  'video': 'Video',
+  // FIX: Added missing key required by GenerationType
+  'predictiveSimulation': 'Simulation',
 };
 
 const FilterButton: React.FC<{ label: string, isActive: boolean, onClick: () => void }> = ({ label, isActive, onClick }) => (
@@ -32,9 +45,24 @@ const FilterButton: React.FC<{ label: string, isActive: boolean, onClick: () => 
     </button>
 );
 
-const HistoryCard: React.FC<{ item: GenerationHistoryItem; index: number; onImageClick: (src: string) => void; }> = ({ item, index, onImageClick }) => {
+const HistoryCard: React.FC<{ 
+  item: GenerationHistoryItem; 
+  index: number; 
+  onImageClick: (src: string) => void; 
+  onEditImage: (id: string, src: string) => void;
+  onUpdateTags: (assetId: string, newTags: string[]) => void;
+}> = ({ item, index, onImageClick, onEditImage, onUpdateTags }) => {
     const [copied, setCopied] = useState(false);
+    const [isEditingTags, setIsEditingTags] = useState(false);
+    const [tagInput, setTagInput] = useState('');
+    const tagInputRef = useRef<HTMLInputElement>(null);
     const cardRef = useRef<HTMLDivElement>(null);
+    
+    useEffect(() => {
+        if (isEditingTags && tagInputRef.current) {
+            tagInputRef.current.focus();
+        }
+    }, [isEditingTags]);
 
     const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
         if (!cardRef.current) return;
@@ -65,6 +93,20 @@ const HistoryCard: React.FC<{ item: GenerationHistoryItem; index: number; onImag
         setTimeout(() => setCopied(false), 2000);
     };
     
+    const handleTagInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter' && tagInput.trim()) {
+            e.preventDefault();
+            const newTags = [...(item.tags || []), tagInput.trim()];
+            onUpdateTags(item.id, newTags);
+            setTagInput('');
+        }
+    };
+    
+    const handleRemoveTag = (tagToRemove: string) => {
+        const newTags = (item.tags || []).filter(t => t !== tagToRemove);
+        onUpdateTags(item.id, newTags);
+    };
+
     const creationDate = new Date(item.createdAt).toLocaleDateString(undefined, {
         year: 'numeric', month: 'short', day: 'numeric'
     });
@@ -73,6 +115,30 @@ const HistoryCard: React.FC<{ item: GenerationHistoryItem; index: number; onImag
       animationDelay: `${Math.min(index * 30, 500)}ms`,
       animationFillMode: 'backwards'
     };
+
+    if (item.type === 'video') {
+        return (
+            <div
+                ref={cardRef}
+                onMouseMove={handleMouseMove}
+                onMouseLeave={handleMouseLeave}
+                className="relative group aspect-video bg-slate-800 rounded-lg overflow-hidden shadow-lg animate-item-enter card-3d-tilt"
+                style={animationStyle}
+            >
+                <video src={item.src} loop muted playsInline className="w-full h-full object-cover" />
+                <div className="absolute inset-0 rounded-lg card-3d-glow" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4 pointer-events-none">
+                    <p className="text-white text-xs font-medium line-clamp-2 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 delay-100" style={{ transform: 'translateZ(20px)' }}>{item.prompt}</p>
+                    <div className="flex justify-between items-center mt-2 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 delay-200" style={{ transform: 'translateZ(10px)' }}>
+                        <span className="text-xs text-slate-300">{creationDate}</span>
+                        <a href={item.src} download={`superdayz-video-${item.id}.mp4`} className="bg-white/20 text-white p-2 rounded-full hover:bg-white/30 pointer-events-auto" aria-label="Download video" onClick={(e) => e.stopPropagation()}>
+                            <DownloadIcon className="w-4 h-4" />
+                        </a>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     if (item.type === 'idea') {
         // Safe-guard against malformed idea items
@@ -96,7 +162,7 @@ const HistoryCard: React.FC<{ item: GenerationHistoryItem; index: number; onImag
                         {copied ? (
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                         ) : (
-                            <ClipboardIcon className="w-4 h-4" />
+                            <ClipboardIcon className="w-4 w-4" />
                         )}
                     </button>
                 </div>
@@ -104,7 +170,6 @@ const HistoryCard: React.FC<{ item: GenerationHistoryItem; index: number; onImag
         );
     }
     
-    // Defensive check for corrupted image data in history
     if (!('src' in item) || typeof item.src !== 'string' || !item.src) {
         console.warn("Rendering placeholder for corrupted history item:", item);
         return (
@@ -130,28 +195,67 @@ const HistoryCard: React.FC<{ item: GenerationHistoryItem; index: number; onImag
           ref={cardRef}
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
-          className="relative group aspect-square bg-slate-800 rounded-lg overflow-hidden shadow-lg animate-item-enter card-3d-tilt cursor-zoom-in"
+          className="relative group aspect-square bg-slate-800 rounded-lg overflow-hidden shadow-lg animate-item-enter card-3d-tilt"
           style={animationStyle}
-          onClick={() => onImageClick(item.src)}
         >
-            <img src={item.src} alt={item.prompt} className="w-full h-full object-cover" />
-             <div className="absolute inset-0 rounded-lg card-3d-glow" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4 pointer-events-none">
-                <p className="text-white text-xs font-medium line-clamp-2 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 delay-100" style={{ transform: 'translateZ(20px)' }}>{item.prompt}</p>
-                <div className="flex justify-between items-center mt-2 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 delay-200" style={{ transform: 'translateZ(10px)' }}>
+            <div className="cursor-zoom-in" onClick={() => onImageClick(item.src)}>
+                <img src={item.src} alt={item.prompt} className="w-full h-full object-cover" />
+                <div className="absolute inset-0 rounded-lg card-3d-glow" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+            </div>
+            
+            {/* Overlay for actions and info */}
+            <div className="absolute inset-0 p-3 flex flex-col justify-end pointer-events-none">
+                 <div className="flex-grow min-h-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <p className="text-white text-xs font-medium line-clamp-3" style={{ transform: 'translateZ(20px)' }}>{item.prompt}</p>
+                </div>
+
+                <div className="flex flex-wrap gap-1 mb-2 pointer-events-auto">
+                    {(item.tags || []).map(tag => (
+                        <div key={tag} className="flex items-center gap-1 text-xs bg-sky-500/20 text-sky-300 px-2 py-0.5 rounded-full">
+                            <span>{tag}</span>
+                            <button onClick={() => handleRemoveTag(tag)} className="hover:text-white">&times;</button>
+                        </div>
+                    ))}
+                </div>
+                 {isEditingTags && (
+                    <input
+                        ref={tagInputRef}
+                        type="text"
+                        value={tagInput}
+                        onChange={e => setTagInput(e.target.value)}
+                        onKeyDown={handleTagInputKeyDown}
+                        onBlur={() => setIsEditingTags(false)}
+                        placeholder="Add tag..."
+                        className="w-full text-xs bg-slate-900 border border-slate-600 rounded-md p-1 my-1 pointer-events-auto"
+                    />
+                )}
+
+                <div className="flex justify-between items-center pointer-events-auto">
                     <span className="text-xs text-slate-300">{creationDate}</span>
-                    <a href={item.src} download={`superdayz-${item.type}-${item.id}.png`} className="bg-white/20 text-white p-2 rounded-full hover:bg-white/30 pointer-events-auto" aria-label="Download image" onClick={(e) => e.stopPropagation()}>
-                        <DownloadIcon className="w-4 h-4" />
-                    </a>
+                    <div className="flex items-center gap-1.5">
+                        <button onClick={(e) => { e.stopPropagation(); setIsEditingTags(true); }} className="bg-white/10 text-white p-2 rounded-full hover:bg-white/20" aria-label="Add Tags"> <TagIcon className="w-4 h-4" /> </button>
+                        <button onClick={(e) => e.stopPropagation()} className="bg-white/10 text-white p-2 rounded-full hover:bg-white/20" aria-label="Move to folder"> <FolderIcon className="w-4 h-4" /> </button>
+                        <button onClick={(e) => { e.stopPropagation(); onEditImage(item.id, item.src); }} className="bg-white/10 text-white p-2 rounded-full hover:bg-white/20" aria-label="Edit image"> <PencilIcon className="w-4 h-4" /> </button>
+                        <a href={item.src} download={`superdayz-${item.type}-${item.id}.png`} className="bg-white/10 text-white p-2 rounded-full hover:bg-white/20" aria-label="Download image" onClick={(e) => e.stopPropagation()}> <DownloadIcon className="w-4 h-4" /> </a>
+                    </div>
                 </div>
             </div>
         </div>
     );
 };
 
-export const HistoryScreen: React.FC<HistoryScreenProps> = ({ history, onImageClick }) => {
+export const HistoryScreen: React.FC<HistoryScreenProps> = ({ history, onImageClick, onEditImage, onUpdateTags }) => {
     const [activeFilter, setActiveFilter] = useState<FilterType>('all');
     const [searchTerm, setSearchTerm] = useState('');
+    
+    const allTags = useMemo(() => {
+        const tagSet = new Set<string>();
+        history.forEach(item => {
+            item.tags?.forEach(tag => tagSet.add(tag));
+        });
+        return Array.from(tagSet);
+    }, [history]);
 
     const filteredHistory = history
             .filter(item => {
@@ -162,27 +266,28 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ history, onImageCl
                 const term = searchTerm.toLowerCase();
                 if (!term) return true;
 
-                // Safe searching using optional chaining (?.) to prevent crashes
+                const hasTag = item.tags?.some(tag => tag.toLowerCase().includes(term));
+
                 if (item.type === 'idea') {
-                    return item.idea?.title?.toLowerCase().includes(term) || item.idea?.description?.toLowerCase().includes(term);
+                    return hasTag || item.idea?.title?.toLowerCase().includes(term) || item.idea?.description?.toLowerCase().includes(term);
                 }
-                return item.prompt?.toLowerCase().includes(term);
+                return hasTag || ('prompt' in item && item.prompt?.toLowerCase().includes(term));
             });
 
     return (
         <main className="flex-grow container mx-auto p-4 md:p-8">
             <div className="text-center mb-8">
-                <h1 className="text-4xl font-extrabold text-white tracking-tight">Your Creative History</h1>
-                <p className="mt-2 text-lg text-slate-400">Browse, search, and revisit all your generated content.</p>
+                <h1 className="text-4xl font-extrabold text-white tracking-tight">Asset Hub</h1>
+                <p className="mt-2 text-lg text-slate-400">Browse, search, and organize all your generated content.</p>
             </div>
 
             {/* Controls */}
             <div className="sticky top-[70px] z-10 bg-slate-900/50 backdrop-blur-lg py-4 mb-8 rounded-xl">
-                <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
+                <div className="flex flex-col md:flex-row gap-4 justify-between items-center mb-4">
                     <div className="relative w-full md:max-w-xs">
                         <input
                             type="text"
-                            placeholder="Search in history..."
+                            placeholder="Search by prompt or tag..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full bg-slate-800 border border-slate-600 rounded-full py-2 pl-10 pr-4 text-white placeholder-slate-400 focus:ring-2 focus:ring-sky-500 focus:outline-none transition"
@@ -198,12 +303,21 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ history, onImageCl
                         ))}
                     </div>
                 </div>
+                 {allTags.length > 0 && (
+                    <div className="flex flex-wrap justify-center gap-2 border-t border-slate-700 pt-4">
+                        {allTags.map(tag => (
+                            <button key={tag} onClick={() => setSearchTerm(tag)} className="text-xs bg-sky-500/10 text-sky-300 px-2 py-1 rounded-full hover:bg-sky-500/30">
+                                #{tag}
+                            </button>
+                        ))}
+                    </div>
+                 )}
             </div>
 
             {/* Gallery */}
             {filteredHistory.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {filteredHistory.map((item, index) => <HistoryCard key={item.id} item={item} index={index} onImageClick={onImageClick} />)}
+                    {filteredHistory.map((item, index) => <HistoryCard key={item.id} item={item} index={index} onImageClick={onImageClick} onEditImage={onEditImage} onUpdateTags={onUpdateTags} />)}
                 </div>
             ) : (
                 <div className="text-center py-16 bg-slate-800/50 rounded-2xl border-2 border-dashed border-slate-700">

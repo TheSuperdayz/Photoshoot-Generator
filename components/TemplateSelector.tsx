@@ -3,12 +3,12 @@ import type { Template } from '../types';
 import { Tooltip } from './Tooltip';
 
 const templates: (Template & { tooltip: string })[] = [
-  { id: 'tshirt', name: 'T-Shirt', src: 'https://images.unsplash.com/photo-1622470953784-05b38e03b036?q=80&w=800&auto-format&fit=crop', tooltip: 'A classic crewneck t-shirt.' },
-  { id: 'phone', name: 'Phone', src: 'https://images.unsplash.com/photo-1604283818164-84d7f52a7810?q=80&w=800&auto-format&fit=crop', tooltip: 'A modern smartphone screen.' },
-  { id: 'cup', name: 'Coffee Cup', src: 'https://images.unsplash.com/photo-1596701383389-322ab73082e6?q=80&w=800&auto-format&fit=crop', tooltip: 'A standard ceramic coffee mug.' },
-  { id: 'tote', name: 'Tote Bag', src: 'https://images.unsplash.com/photo-1579065191937-2f3b8a5d3f7a?q=80&w=800&auto-format&fit=crop', tooltip: 'A simple canvas tote bag.' },
+  { id: 'tshirt', name: 'T-Shirt', src: 'https://images.unsplash.com/photo-1660997351262-6c31d8a35b6c?q=80&w=1064&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3Dcrop', tooltip: 'A classic crewneck t-shirt.' },
+  { id: 'phone', name: 'Phone', src: 'https://images.unsplash.com/photo-1758598304184-3196bf4bfad7?q=80&w=2832&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D=crop', tooltip: 'A modern smartphone screen.' },
+  { id: 'cup', name: 'Coffee Cup', src: 'https://images.unsplash.com/photo-1598908314732-07113901949e?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D=crop', tooltip: 'A standard ceramic coffee mug.' },
+  { id: 'tote', name: 'Tote Bag', src: 'https://images.unsplash.com/photo-1574365569389-a10d488ca3fb?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D=crop', tooltip: 'A simple canvas tote bag.' },
   { id: 'laptop', name: 'Laptop', src: 'https://images.unsplash.com/photo-1522199755839-a2bacb67c546?q=80&w=800&auto-format&fit=crop', tooltip: 'The screen of an open laptop.' },
-  { id: 'billboard', name: 'Billboard', src: 'https://images.unsplash.com/photo-1521994138038-94b21401340f?q=80&w=800&auto-format&fit=crop', tooltip: 'A large outdoor billboard.' },
+  { id: 'billboard', name: 'Billboard', src: 'https://images.unsplash.com/photo-1576608583800-2dea5261c7ee?q=80&w=987&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D=crop', tooltip: 'A large outdoor billboard.' },
 ];
 
 interface TemplateSelectorProps {

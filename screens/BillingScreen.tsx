@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import type { User, PaymentMethod, AppView } from '../types';
 import { BillingIcon } from '../components/icons/BillingIcon';
@@ -7,7 +8,8 @@ import { PlusIcon } from '../components/icons/PlusIcon';
 
 interface BillingScreenProps {
   user: User;
-  onUpdateSubscription: (plan: 'Free' | 'Pro') => void;
+  // FIX: Updated plan types
+  onUpdateSubscription: (plan: 'Freemium' | 'Executive') => void;
   onBuyCredits: (credits: number, cost: number) => void;
   onAddPaymentMethod: (method: Omit<PaymentMethod, 'id'>) => void;
   onDeletePaymentMethod: (id: string) => void;
@@ -77,7 +79,8 @@ const AddPaymentModal: React.FC<{
 export const BillingScreen: React.FC<BillingScreenProps> = (props) => {
   const { user, onUpdateSubscription, onBuyCredits, onAddPaymentMethod, onDeletePaymentMethod, onNavigate } = props;
   const { subscription, credits, billingHistory, paymentMethods } = user;
-  const isPro = subscription?.plan === 'Pro';
+  // FIX: Updated plan check from 'Pro' to 'Executive'
+  const isPro = subscription?.plan === 'Executive';
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
@@ -99,11 +102,11 @@ export const BillingScreen: React.FC<BillingScreenProps> = (props) => {
                   <h2 className="text-2xl font-bold text-white mb-4">Current Plan</h2>
                    <div className={`p-6 rounded-lg mb-4 ${isPro ? 'bg-purple-500/10 border border-purple-400/30' : 'bg-gray-500/10 border border-gray-400/20'}`}>
                         <div className="flex justify-between items-center">
-                            <h3 className={`text-xl font-bold ${isPro ? 'text-purple-300' : 'text-gray-200'}`}>{subscription?.plan} Plan</h3>
+                            <h3 className={`text-xl font-bold ${isPro ? 'text-purple-300' : 'text-gray-200'}`}>{isPro ? 'Executive Member' : 'Freemium'} Plan</h3>
                             {isPro ? 
-                                <button onClick={() => onUpdateSubscription('Free')} className="font-semibold py-2 px-4 rounded-full text-sm text-white bg-white/10 hover:bg-white/20 btn-bounce">Downgrade to Free</button>
+                                <button onClick={() => onUpdateSubscription('Freemium')} className="font-semibold py-2 px-4 rounded-full text-sm text-white bg-white/10 hover:bg-white/20 btn-bounce">Downgrade to Freemium</button>
                                 :
-                                <button onClick={() => onUpdateSubscription('Pro')} className="font-bold py-2 px-4 rounded-full text-sm text-gray-900 bg-gradient-to-r from-purple-300 to-purple-400 hover:opacity-90 btn-bounce">Upgrade to Pro</button>
+                                <button onClick={() => onUpdateSubscription('Executive')} className="font-bold py-2 px-4 rounded-full text-sm text-gray-900 bg-gradient-to-r from-purple-300 to-purple-400 hover:opacity-90 btn-bounce">Upgrade to Executive</button>
                             }
                         </div>
                         <p className="text-sm text-gray-400 mt-2">
@@ -111,7 +114,7 @@ export const BillingScreen: React.FC<BillingScreenProps> = (props) => {
                         </p>
                    </div>
                    <div className="text-center text-sm text-gray-400">
-                     Pro plan: <span className="font-semibold text-white">$29/month</span> for <span className="font-semibold text-white">500 credits</span>.
+                     Executive Member plan: <span className="font-semibold text-white">$29/month</span> for <span className="font-semibold text-white">500 credits</span>.
                    </div>
                 </div>
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { DownloadIcon } from './icons/DownloadIcon';
 
 interface ImageZoomModalProps {
@@ -9,46 +9,111 @@ interface ImageZoomModalProps {
 
 export const ImageZoomModal: React.FC<ImageZoomModalProps> = ({ isOpen, onClose, imageSrc }) => {
   const [isClosing, setIsClosing] = useState(false);
+  const [scale, setScale] = useState(1);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const lastMousePosition = useRef({ x: 0, y: 0 });
 
+  // Reset state when modal opens with a new image
+  useEffect(() => {
+    if (isOpen) {
+      setScale(1);
+      setPosition({ x: 0, y: 0 });
+    }
+  }, [isOpen, imageSrc]);
+
+  const handleClose = useCallback(() => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setIsClosing(false);
+      onClose();
+    }, 300);
+  }, [onClose]);
+
+  // Handle Escape key and background scrolling
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         handleClose();
       }
     };
-
     if (isOpen) {
+      document.body.style.overflow = 'hidden';
       window.addEventListener('keydown', handleKeyDown);
+    } else {
+      document.body.style.overflow = '';
     }
-
     return () => {
+      document.body.style.overflow = '';
       window.removeEventListener('keydown', handleKeyDown);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
+  }, [isOpen, handleClose]);
 
+  // Zoom handler
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    if (isDragging) return;
 
-  const handleClose = () => {
-    setIsClosing(true);
-    setTimeout(() => {
-      setIsClosing(false);
-      onClose();
-    }, 300); // Match animation duration
+    // The deltaY is multiplied by a small number to control zoom speed
+    const delta = e.deltaY * -0.005;
+    const newScale = Math.min(Math.max(1, scale + delta), 5); // Clamp scale between 1x and 5x
+    
+    setScale(newScale);
+
+    // If zoomed all the way out, reset position to center
+    if (newScale === 1) {
+      setPosition({ x: 0, y: 0 });
+    }
   };
 
+  // Pan handlers
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (scale > 1) {
+      e.preventDefault(); // Prevent default image drag behavior
+      setIsDragging(true);
+      lastMousePosition.current = { x: e.clientX, y: e.clientY };
+    }
+  };
+  
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || scale <= 1) return;
+    
+    const dx = e.clientX - lastMousePosition.current.x;
+    const dy = e.clientY - lastMousePosition.current.y;
+    
+    setPosition(prev => ({ x: prev.x + dx, y: prev.y + dy }));
+    
+    lastMousePosition.current = { x: e.clientX, y: e.clientY };
+  };
+
+  const resetZoom = () => {
+    setScale(1);
+    setPosition({ x: 0, y: 0 });
+  };
+  
   if (!isOpen && !isClosing) return null;
   if (!imageSrc) return null;
-
+  
+  const imageCursor = isDragging ? 'grabbing' : (scale > 1 ? 'grab' : 'zoom-in');
+  
   return (
     <div
-      className={`fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 sm:p-8 ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}
+      className={`fixed top-0 left-0 w-screen h-screen bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 sm:p-8 ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}
       onClick={handleClose}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp} // Stop dragging if mouse leaves the window
       aria-modal="true"
       role="dialog"
     >
       <div
-        className={`relative w-full h-full flex flex-col items-center justify-center ${isClosing ? 'animate-scale-out' : 'animate-scale-in'}`}
+        className="relative w-full h-full flex items-center justify-center overflow-hidden"
         onClick={(e) => e.stopPropagation()}
+        onWheel={handleWheel}
       >
         <button
           onClick={handleClose}
@@ -60,13 +125,29 @@ export const ImageZoomModal: React.FC<ImageZoomModalProps> = ({ isOpen, onClose,
           </svg>
         </button>
 
-        <img
-          src={imageSrc}
-          alt="Zoomed-in generated content"
-          className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
-        />
+        <div 
+          className="w-full h-full"
+          onMouseDown={handleMouseDown}
+        >
+            <img
+              src={imageSrc}
+              alt="Zoomed-in generated content"
+              className={`absolute top-0 left-0 w-full h-full rounded-lg shadow-2xl transition-transform duration-100 ease-out ${scale === 1 ? 'object-contain' : 'object-none'}`}
+              style={{
+                transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
+                cursor: imageCursor,
+                transformOrigin: 'center center',
+                willChange: 'transform',
+              }}
+              draggable="false"
+            />
+        </div>
+        
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-slate-900/60 backdrop-blur-sm text-white text-xs py-1 px-3 rounded-full opacity-70 pointer-events-none">
+            Scroll to zoom, drag to pan when zoomed
+        </div>
 
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 mb-4">
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2">
             <a
               href={imageSrc}
               download={`superdayz-image-${Date.now()}.png`}
@@ -76,6 +157,15 @@ export const ImageZoomModal: React.FC<ImageZoomModalProps> = ({ isOpen, onClose,
               <DownloadIcon className="w-5 h-5" />
               <span>Download</span>
             </a>
+            {scale > 1 && (
+                 <button
+                    onClick={resetZoom}
+                    className="flex items-center gap-2 bg-slate-900/60 backdrop-blur-sm text-white font-semibold py-2 px-4 rounded-full hover:bg-black/60 transition-colors"
+                    title="Reset Zoom"
+                 >
+                    <span>Reset Zoom</span>
+                </button>
+            )}
         </div>
       </div>
     </div>

@@ -1,3 +1,4 @@
+
 export interface ImageData {
   base64: string;
   mimeType: string;
@@ -6,6 +7,11 @@ export interface ImageData {
 export interface SessionImage {
   id: string;
   src: string;
+}
+
+export interface SessionVideo {
+  id: string;
+  src: string; // This will be a blob URL
 }
 
 export interface AIModel {
@@ -23,13 +29,14 @@ export interface BrandKit {
 }
 
 export interface SubscriptionPlan {
-  plan: 'Free' | 'Pro';
+  // FIX: Changed plan types to match application logic
+  plan: 'Freemium' | 'Executive';
   nextBillingDate: string | null;
   creditsPerMonth: number;
 }
 
 export interface PaymentMethod {
-  id: string;
+  id:string;
   cardType: 'Visa' | 'Mastercard' | 'Amex';
   last4: string;
   expiryDate: string; // MM/YY
@@ -56,6 +63,10 @@ export interface User {
   paymentMethods?: PaymentMethod[];
   billingHistory?: BillingHistoryItem[];
   hasCompletedOnboarding?: boolean;
+  // Gamification fields
+  level: number;
+  xp: number;
+  achievements: string[]; // Array of achievement IDs
 }
 
 export interface Template {
@@ -88,14 +99,47 @@ export interface ToDoItem {
   reminder?: 'none' | 'on-due-date' | '1-day-before' | '3-days-before';
 }
 
-export type GenerationType = 'photoshoot' | 'mockup' | 'image' | 'idea';
+// --- Predictive Simulator Types ---
+export interface HeatmapPoint {
+    x: number; // percentage
+    y: number; // percentage
+}
+
+export interface MetricPredictions {
+    viralityScore: number; // e.g., 85
+    conversionLikelihood: 'Low' | 'Medium' | 'High';
+    ctrEstimate: string; // e.g., "1.5% - 2.5%"
+}
+
+export interface SimulationResult {
+    creativeId: number; // 1 to 4
+    isBestPerformer: boolean;
+    predictions: MetricPredictions;
+    channelRecommendation: string;
+    heatmap: {
+        hotspots: HeatmapPoint[];
+        coldspots: HeatmapPoint[];
+        insight: string;
+    };
+}
+
+export interface SimulationReport {
+    summary: string;
+    results: SimulationResult[];
+}
+// --- End Predictive Simulator Types ---
+
+
+export type GenerationType = 'photoshoot' | 'mockup' | 'image' | 'idea' | 'copy' | 'edit' | 'pose' | 'group' | 'video' | 'predictiveSimulation';
 
 export interface GeneratedImageItem {
   id: string;
-  type: 'photoshoot' | 'mockup' | 'image';
+  type: 'photoshoot' | 'mockup' | 'image' | 'edit' | 'pose' | 'group';
   createdAt: string;
   src: string;
   prompt: string;
+  originalId?: string;
+  tags?: string[];
 }
 
 export interface GeneratedIdeaItem {
@@ -104,8 +148,67 @@ export interface GeneratedIdeaItem {
   createdAt: string;
   idea: CreativeIdea;
   prompt: string;
+  tags?: string[];
 }
 
-export type GenerationHistoryItem = GeneratedImageItem | GeneratedIdeaItem;
+export interface GeneratedVideoItem {
+  id: string;
+  type: 'video';
+  createdAt: string;
+  src: string; // This will be a blob URL
+  prompt: string;
+  tags?: string[];
+}
 
-export type AppView = 'landing' | 'login' | 'register' | 'dashboard' | 'app' | 'mockup' | 'imageGenerator' | 'aiTalk' | 'creativeIdeas' | 'copywriter' | 'history' | 'todo' | 'settings' | 'billing';
+export interface PredictiveSimulationItem {
+    id: string;
+    type: 'predictiveSimulation';
+    createdAt: string;
+    report: SimulationReport;
+    creatives: ImageData[];
+    prompt: string; // Storing audience and channels here
+    tags?: string[];
+}
+
+export type GenerationHistoryItem = GeneratedImageItem | GeneratedIdeaItem | GeneratedVideoItem | PredictiveSimulationItem;
+
+export interface TrendItem {
+  title: string;
+  description: string;
+  velocity: 'Rising Fast' | 'Growing Steadily' | 'Peaking' | 'Fading Slowly' | 'Stable';
+  lifespanPrediction: string; // e.g., "Short-term (1-2 weeks)", "Long-wave (2 months+)"
+  targetAudience: string; // e.g., "Gen Z, Fashion enthusiasts", "Millennials, Professionals"
+  audienceResonance: string;
+}
+
+export interface CrossPlatformTrend {
+    trend: string;
+    originPlatform: string;
+    emergingOn: string[]; // e.g., ["Instagram Reels", "YouTube Shorts"]
+    insight: string;
+}
+
+export interface TrendReport {
+  summary: string;
+  topicalTrends: TrendItem[];
+  visualAudioStyles: TrendItem[];
+  popularFormats: TrendItem[];
+  crossPlatformTrends: CrossPlatformTrend[];
+  examplePrompt: string;
+}
+
+
+export interface StrategyRecommendation {
+    channel: 'TikTok' | 'Instagram' | 'YouTube' | 'LinkedIn' | 'Facebook' | 'X (Twitter)';
+    format: string;
+    reasoning: string;
+    contentIdeas: string[];
+}
+
+export interface MarketingStrategy {
+    summary: string;
+    recommendations: StrategyRecommendation[];
+}
+
+
+export type AppView = 'landing' | 'login' | 'register' | 'dashboard' | 'app' | 'mockup' | 'imageGenerator' | 'aiTalk' | 'creativeIdeas' | 'copywriter' | 'history' | 'todo' | 'settings' | 'billing' | 'creativeJourney' | 'poseGenerator' | 'groupPhoto' | 'videoGenerator' | 'trendRadar' | 'strategyAssistant' | 'predictiveSimulator';

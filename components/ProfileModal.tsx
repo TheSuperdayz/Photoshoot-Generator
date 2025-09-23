@@ -1,3 +1,4 @@
+
 import React, { useRef, useState } from 'react';
 import type { User, AppView } from '../types';
 import { UserIcon } from './icons/UserIcon';
@@ -5,6 +6,7 @@ import { PencilIcon } from './icons/PencilIcon';
 import { CogIcon } from './icons/CogIcon';
 import { CalendarIcon } from './icons/CalendarIcon';
 import { BillingIcon } from './icons/BillingIcon';
+import { CrownIcon } from './icons/CrownIcon';
 
 interface ProfileModalProps {
   user: User;
@@ -56,6 +58,12 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, isOpen, onClos
                     <UserIcon className="w-12 h-12 text-gray-400" />
                 )}
             </div>
+            {/* FIX: Updated plan check from 'Pro' to 'Executive' */}
+            {user.subscription?.plan === 'Executive' && (
+              <div className="absolute top-0 right-0 transform translate-x-1/4 -translate-y-1/4 bg-gradient-to-br from-yellow-300 to-amber-500 p-1 rounded-full shadow-lg border-2 border-gray-950/80">
+                <CrownIcon className="w-4 h-4 text-white" />
+              </div>
+            )}
             <button onClick={handlePictureClick} className="absolute inset-0 w-full h-full rounded-full bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" aria-label="Change profile picture">
                 <PencilIcon className="w-6 h-6 text-white"/>
             </button>

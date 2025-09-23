@@ -2,6 +2,7 @@ import React from 'react';
 import { LoadingSpinner } from './LoadingSpinner';
 import { DownloadIcon } from './icons/DownloadIcon';
 import { QuillIcon } from './icons/QuillIcon';
+import { PencilIcon } from './icons/PencilIcon';
 import type { SessionImage } from '../types';
 
 interface GeneratedImageGalleryProps {
@@ -9,19 +10,20 @@ interface GeneratedImageGalleryProps {
   isLoading: boolean;
   onGenerateCopy: (imageSrc: string) => void;
   onImageClick: (imageSrc: string) => void;
+  onEditImage: (id: string, imageSrc: string) => void;
 }
 
-const GalleryItem: React.FC<{ src: string; onGenerateCopy: (src: string) => void; onImageClick: (src: string) => void; index: number; }> = ({ src, onGenerateCopy, onImageClick, index }) => {
+const GalleryItem: React.FC<{ image: SessionImage; onGenerateCopy: (src: string) => void; onImageClick: (src: string) => void; onEditImage: (id: string, src: string) => void; index: number; }> = ({ image, onGenerateCopy, onImageClick, onEditImage, index }) => {
   return (
     <div 
       className="relative group aspect-square bg-white/5 rounded-lg overflow-hidden shadow-lg transition-transform duration-300 hover:scale-105 animate-item-enter cursor-zoom-in"
       style={{ animationDelay: `${Math.min(index * 50, 500)}ms`, animationFillMode: 'backwards' }}
-      onClick={() => onImageClick(src)}
+      onClick={() => onImageClick(image.src)}
     >
-      <img src={src} alt="Generated photoshoot" className="w-full h-full object-cover" />
+      <img src={image.src} alt="Generated photoshoot" className="w-full h-full object-cover" />
       <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-2 pointer-events-none">
         <a
-          href={src}
+          href={image.src}
           download={`superdayz-photo-${Date.now()}.png`}
           className="flex items-center gap-2 bg-white/20 backdrop-blur-sm text-white font-semibold py-2 px-3 rounded-full hover:bg-white/30 transition-colors pointer-events-auto"
           title="Download Image"
@@ -32,19 +34,29 @@ const GalleryItem: React.FC<{ src: string; onGenerateCopy: (src: string) => void
         <button
           onClick={(e) => {
             e.stopPropagation();
-            onGenerateCopy(src);
+            onGenerateCopy(image.src);
           }}
           className="flex items-center gap-2 bg-white/20 backdrop-blur-sm text-white font-semibold py-2 px-3 rounded-full hover:bg-white/30 transition-colors pointer-events-auto"
           title="Write Copy for this Image"
         >
           <QuillIcon className="w-5 h-5" />
         </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onEditImage(image.id, image.src);
+          }}
+          className="flex items-center gap-2 bg-white/20 backdrop-blur-sm text-white font-semibold py-2 px-3 rounded-full hover:bg-white/30 transition-colors pointer-events-auto"
+          title="Edit Image"
+        >
+          <PencilIcon className="w-5 h-5" />
+        </button>
       </div>
     </div>
   );
 };
 
-export const GeneratedImageGallery: React.FC<GeneratedImageGalleryProps> = ({ images, isLoading, onGenerateCopy, onImageClick }) => {
+export const GeneratedImageGallery: React.FC<GeneratedImageGalleryProps> = ({ images, isLoading, onGenerateCopy, onImageClick, onEditImage }) => {
   if (isLoading && images.length === 0) {
     return (
       <div className="w-full h-[60vh] flex flex-col items-center justify-center bg-white/5 backdrop-blur-lg rounded-2xl">
@@ -76,7 +88,7 @@ export const GeneratedImageGallery: React.FC<GeneratedImageGalleryProps> = ({ im
         </div>
       )}
       {images.map((image, index) => (
-        <GalleryItem key={image.id} src={image.src} index={index} onGenerateCopy={() => onGenerateCopy(image.src)} onImageClick={onImageClick} />
+        <GalleryItem key={image.id} image={image} index={index} onGenerateCopy={onGenerateCopy} onImageClick={onImageClick} onEditImage={onEditImage} />
       ))}
     </div>
   );

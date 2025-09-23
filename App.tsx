@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { GoogleGenAI } from "@google/genai";
 import type { Chat } from "@google/genai";
@@ -10,6 +11,8 @@ import { ReminderToast } from './components/ReminderToast';
 import { OnboardingModal } from './components/OnboardingModal';
 import { Alert } from './components/Alert';
 import { ImageZoomModal } from './components/ImageZoomModal';
+import { GamificationToast } from './components/GamificationToast';
+import { ImageEditorModal } from './components/ImageEditorModal';
 
 // Screens
 import { LandingScreen } from './screens/LandingScreen';
@@ -26,13 +29,21 @@ import { HistoryScreen } from './screens/HistoryScreen';
 import { ToDoScreen } from './screens/ToDoScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { BillingScreen } from './screens/BillingScreen';
+import { CreativeJourneyScreen } from './screens/CreativeJourneyScreen';
+import { PoseGeneratorScreen } from './screens/PoseGeneratorScreen';
+import { GroupPhotoScreen } from './screens/GroupPhotoScreen';
+import { VideoGeneratorScreen } from './screens/VideoGeneratorScreen';
+import { TrendRadarScreen } from './screens/TrendRadarScreen';
+import { StrategyAssistantScreen } from './screens/StrategyAssistantScreen';
+import { PredictiveSimulatorScreen } from './screens/PredictiveSimulatorScreen';
 
 
 // Services
-import { generatePhotoshootImage, generateMockupImage, generateImageFromPrompt, generateCreativeIdeas, generateCopywritingContent } from './services/geminiService';
+import { generatePhotoshootImage, generateMockupImage, generateImageFromPrompt, generateCreativeIdeas, generateCopywritingContent, generatePosedImage, generateGroupPhoto, generateVideo, generateMarketingStrategy, generateTrendReport, generatePredictiveSimulation } from './services/geminiService';
+import { achievements, getXpForNextLevel } from './services/gamificationService';
 
 // Types
-import type { ImageData, User, Template, ChatMessage, CreativeIdea, CopywritingResult, GenerationHistoryItem, ToDoItem, AIModel, BrandKit, SubscriptionPlan, PaymentMethod, BillingHistoryItem, GeneratedImageItem, SessionImage, AppView } from './types';
+import type { ImageData, User, Template, ChatMessage, CreativeIdea, CopywritingResult, GenerationHistoryItem, ToDoItem, AIModel, BrandKit, SubscriptionPlan, PaymentMethod, BillingHistoryItem, GeneratedImageItem, SessionImage, AppView, SessionVideo, MarketingStrategy, TrendReport, SimulationReport, PredictiveSimulationItem } from './types';
 
 const HISTORY_LIMIT = 50; // A reasonable limit for localStorage
 
@@ -104,6 +115,8 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [applyBrandKit, setApplyBrandKit] = useState<boolean>(false);
+  const [isWatermarkEnabled, setIsWatermarkEnabled] = useState<boolean>(true);
+
 
   // Photoshoot Generator State
   const [productImage, setProductImage] = useState<ImageData | null>(null);
@@ -126,6 +139,24 @@ const App: React.FC = () => {
   const [stylePreset, setStylePreset] = useState<string>('Photorealistic');
   const [aspectRatio, setAspectRatio] = useState<'1:1' | '16:9' | '9:16'>('1:1');
   const [generatedImages, setGeneratedImages] = useState<SessionImage[]>([]);
+  
+  // Pose Generator State
+  const [posedModelImage, setPosedModelImage] = useState<ImageData | null>(null);
+  const [posePrompt, setPosePrompt] = useState<string>('');
+  const [generatedPoses, setGeneratedPoses] = useState<SessionImage[]>([]);
+
+  // Group Photo Generator State
+  const [groupImages, setGroupImages] = useState<(ImageData | null)[]>(Array(5).fill(null));
+  const [groupBackground, setGroupBackground] = useState<string>('');
+  const [groupArrangement, setGroupArrangement] = useState<string>('');
+  const [generatedGroupPhotos, setGeneratedGroupPhotos] = useState<SessionImage[]>([]);
+
+  // Video Generator State
+  const [videoPrompt, setVideoPrompt] = useState<string>('');
+  const [videoSourceImage, setVideoSourceImage] = useState<ImageData | null>(null);
+  const [generatedVideos, setGeneratedVideos] = useState<SessionVideo[]>([]);
+  const [videoLoadingMessage, setVideoLoadingMessage] = useState<string>('Initializing video generation...');
+
 
   // AI Talk State
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
@@ -147,6 +178,15 @@ const App: React.FC = () => {
   const [generatedCopyInModal, setGeneratedCopyInModal] = useState<CopywritingResult[]>([]);
   const [isModalLoading, setIsModalLoading] = useState(false);
 
+  // Strategy Assistant State
+  const [generatedStrategy, setGeneratedStrategy] = useState<MarketingStrategy | null>(null);
+
+  // Trend Radar State
+  const [trendReport, setTrendReport] = useState<TrendReport | null>(null);
+  
+  // Predictive Simulator State
+  const [simulationReport, setSimulationReport] = useState<SimulationReport | null>(null);
+
 
   // History State
   const [generationHistory, setGenerationHistory] = useState<GenerationHistoryItem[]>([]);
@@ -157,6 +197,13 @@ const App: React.FC = () => {
 
   // Image Zoom Modal State
   const [zoomedImageSrc, setZoomedImageSrc] = useState<string | null>(null);
+  
+  // Image Editor Modal State
+  const [editingImage, setEditingImage] = useState<{ id: string; src: string } | null>(null);
+
+  // Gamification State
+  const [gamificationToast, setGamificationToast] = useState<{ title: string; description: string } | null>(null);
+
 
   // Parallax background ref
   const auroraContainerRef = useRef<HTMLDivElement>(null);
@@ -262,14 +309,107 @@ const App: React.FC = () => {
     }
   }, [toDoList, user?.email]);
   // --- End Data Persistence ---
+  
+  // --- Gamification Toast Manager ---
+  useEffect(() => {
+    if (gamificationToast) {
+        const timer = setTimeout(() => {
+            setGamificationToast(null);
+        }, 5000); // Show toast for 5 seconds
+        return () => clearTimeout(timer);
+    }
+  }, [gamificationToast]);
+  // --- End Gamification ---
+
+  // --- Subscription-based Feature Control ---
+  useEffect(() => {
+      if (user) {
+          // Pro users get watermarks disabled by default, but can enable them.
+          // Free users always have watermarks on and cannot disable them.
+          if (user.subscription?.plan === 'Executive') {
+              setIsWatermarkEnabled(false);
+          } else {
+              setIsWatermarkEnabled(true);
+          }
+      }
+  }, [user]);
+  // --- End Subscription Control ---
 
 
-  const deductCredit = useCallback(() => {
+  const checkAchievements = useCallback((updatedUser: User, updatedHistory: GenerationHistoryItem[]) => {
+    const newAchievements: string[] = [];
+    achievements.forEach(ach => {
+      if (!updatedUser.achievements.includes(ach.id) && ach.check(updatedUser, updatedHistory)) {
+        newAchievements.push(ach.id);
+        setGamificationToast({ title: `Achievement Unlocked!`, description: `${ach.name} (+${ach.xpBonus} XP)` });
+      }
+    });
+    return newAchievements;
+  }, []);
+
+  const grantXp = useCallback((amount: number, type?: 'generation' | 'login' | 'todo') => {
+    setUser(currentUser => {
+      if (!currentUser) return null;
+
+      let updatedUser = { ...currentUser, xp: currentUser.xp + amount };
+      const xpForNext = getXpForNextLevel(updatedUser.level);
+
+      // Check for Level Up
+      if (updatedUser.xp >= xpForNext) {
+        const newLevel = updatedUser.level + 1;
+        const creditReward = newLevel * 5;
+        updatedUser = {
+          ...updatedUser,
+          level: newLevel,
+          xp: updatedUser.xp - xpForNext, // Carry over excess XP
+          credits: updatedUser.credits + creditReward,
+        };
+        setGamificationToast({ title: `Level Up! You've reached Level ${newLevel}`, description: `+${creditReward} Credits!` });
+      }
+      
+      // Check for new achievements
+      const newAchievements = checkAchievements(updatedUser, generationHistory);
+      if (newAchievements.length > 0) {
+        const totalXpBonus = newAchievements.reduce((sum, achId) => {
+            const achievement = achievements.find(a => a.id === achId);
+            return sum + (achievement?.xpBonus || 0);
+        }, 0);
+
+        updatedUser = {
+          ...updatedUser,
+          xp: updatedUser.xp + totalXpBonus,
+          achievements: [...updatedUser.achievements, ...newAchievements],
+        };
+
+        // Re-check for level up in case achievement XP caused it
+        const xpForNextAfterBonus = getXpForNextLevel(updatedUser.level);
+         if (updatedUser.xp >= xpForNextAfterBonus) {
+            const newLevel = updatedUser.level + 1;
+            const creditReward = newLevel * 5;
+            updatedUser = {
+              ...updatedUser,
+              level: newLevel,
+              xp: updatedUser.xp - xpForNextAfterBonus,
+              credits: updatedUser.credits + creditReward,
+            };
+            // The achievement toast will show first, then this one will appear after
+            setTimeout(() => {
+                 setGamificationToast({ title: `Level Up! You've reached Level ${newLevel}`, description: `+${creditReward} Credits!` });
+            }, 1000);
+        }
+      }
+
+      return updatedUser;
+    });
+  }, [generationHistory, checkAchievements]);
+
+  const deductCredit = useCallback((amount = 1) => {
     setUser(prevUser => {
         if (!prevUser) return null;
-        return { ...prevUser, credits: prevUser.credits - 1 };
+        grantXp(5 * amount, 'generation'); // Grant 5 XP for every credit spent
+        return { ...prevUser, credits: prevUser.credits - amount };
     });
-  }, []);
+  }, [grantXp]);
 
   const addItemsToHistory = useCallback((items: GenerationHistoryItem[]) => {
       if (items.length === 0) return;
@@ -285,10 +425,9 @@ const App: React.FC = () => {
 
       if (userData) {
         const today = new Date().toDateString();
-        // Grant daily free credits if on Free plan
-        if (userData.subscription?.plan === 'Free' && new Date(userData.lastLogin).toDateString() !== today) {
+        // Grant daily free credits if on Freemium plan
+        if (userData.subscription?.plan === 'Freemium' && new Date(userData.lastLogin).toDateString() !== today) {
             userData.credits = Math.max(userData.credits, 5); // Reset to 5, but don't take away purchased credits.
-            userData.lastLogin = new Date().toISOString();
         }
         
         // Load all user-specific data from localStorage
@@ -299,12 +438,23 @@ const App: React.FC = () => {
         
         // Initialize subscription if it doesn't exist (for older accounts)
         if (!userData.subscription) {
-            userData.subscription = { plan: 'Free', nextBillingDate: null, creditsPerMonth: 5 };
+            userData.subscription = { plan: 'Freemium', nextBillingDate: null, creditsPerMonth: 5 };
         }
+        
+        // Initialize gamification fields if they don't exist
+        if (typeof userData.level !== 'number') userData.level = 1;
+        if (typeof userData.xp !== 'number') userData.xp = 0;
+        if (!Array.isArray(userData.achievements)) userData.achievements = [];
 
         const userHistory = JSON.parse(localStorage.getItem(`superdayzHistory_${loggedInUserEmail}`) || '[]');
         const userToDos = JSON.parse(localStorage.getItem(`superdayzTodos_${loggedInUserEmail}`) || '[]');
 
+        // Check for daily login XP bonus
+        if (new Date(userData.lastLogin).toDateString() !== today) {
+            userData.lastLogin = new Date().toISOString();
+            // We'll grant XP after setting the user state
+        }
+        
         setUser(userData);
         setGenerationHistory(userHistory);
         setToDoList(userToDos);
@@ -317,6 +467,19 @@ const App: React.FC = () => {
       }
     }
   }, []);
+  
+  // Effect to grant daily login bonus AFTER user is set
+  useEffect(() => {
+    if (user) {
+        const today = new Date().toDateString();
+        const lastLoginDate = new Date(user.lastLogin).toDateString();
+        // Check if the login is "new" for today by comparing with a temporary flag
+        if (lastLoginDate === today && !sessionStorage.getItem('dailyLoginGranted')) {
+            grantXp(10, 'login');
+            sessionStorage.setItem('dailyLoginGranted', 'true');
+        }
+    }
+  }, [user, grantXp]);
   
   // --- Reminder System ---
   useEffect(() => {
@@ -378,6 +541,7 @@ const App: React.FC = () => {
     }
     const users = JSON.parse(localStorage.getItem('superdayzUsers') || '{}');
     if (users[email] && users[email].password === pass) {
+        sessionStorage.removeItem('dailyLoginGranted'); // Allow login bonus check
         setAuthError(null);
         localStorage.setItem('superdayzLoggedInUser', email);
         let userData = users[email];
@@ -385,14 +549,22 @@ const App: React.FC = () => {
         const today = new Date().toDateString();
         // Initialize subscription if it doesn't exist
         if (!userData.subscription) {
-            userData.subscription = { plan: 'Free', nextBillingDate: null, creditsPerMonth: 5 };
+            userData.subscription = { plan: 'Freemium', nextBillingDate: null, creditsPerMonth: 5 };
         }
 
-        // Grant daily free credits if on Free plan
-        if (userData.subscription.plan === 'Free' && new Date(userData.lastLogin).toDateString() !== today) {
+        // Grant daily free credits if on Freemium plan
+        if (userData.subscription.plan === 'Freemium' && new Date(userData.lastLogin).toDateString() !== today) {
             userData.credits = Math.max(userData.credits, 5);
         }
-        userData.lastLogin = new Date().toISOString();
+
+        // Initialize gamification fields if they don't exist
+        if (typeof userData.level !== 'number') userData.level = 1;
+        if (typeof userData.xp !== 'number') userData.xp = 0;
+        if (!Array.isArray(userData.achievements)) userData.achievements = [];
+
+        if (new Date(userData.lastLogin).toDateString() !== today) {
+            userData.lastLogin = new Date().toISOString();
+        }
         
         // Load all user-specific data
         userData.uploadedModels = JSON.parse(localStorage.getItem(`superdayzModels_${email}`) || '[]');
@@ -431,15 +603,19 @@ const App: React.FC = () => {
         email, name, role, credits: 5, lastLogin: new Date().toISOString(), password: pass, profilePicture: '', 
         uploadedModels: [], 
         brandKit: { colorPalette: [] },
-        subscription: { plan: 'Free', nextBillingDate: null, creditsPerMonth: 5 },
+        subscription: { plan: 'Freemium', nextBillingDate: null, creditsPerMonth: 5 },
         paymentMethods: [],
         billingHistory: [],
         hasCompletedOnboarding: false,
+        level: 1,
+        xp: 0,
+        achievements: [],
     };
     
     users[email] = newUser;
     localStorage.setItem('superdayzUsers', JSON.stringify(users));
     localStorage.setItem('superdayzLoggedInUser', email);
+    sessionStorage.removeItem('dailyLoginGranted'); // Allow login bonus check
 
     // Initialize all storage for the new user
     localStorage.setItem(`superdayzHistory_${email}`, '[]');
@@ -459,6 +635,7 @@ const App: React.FC = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('superdayzLoggedInUser');
+    sessionStorage.removeItem('dailyLoginGranted');
     setUser(null);
     setGenerationHistory([]);
     setToDoList([]);
@@ -507,8 +684,22 @@ const App: React.FC = () => {
   };
 
   const handleUpdateToDos = (updatedToDos: ToDoItem[]) => {
-      // The state update will trigger the `useEffect` hook for persistence.
+      // Check if a task was completed
+      const newlyCompleted = updatedToDos.find(
+          (t, i) => t.isCompleted && !toDoList[i]?.isCompleted
+      );
+      if (newlyCompleted) {
+          grantXp(2, 'todo');
+      }
       setToDoList(updatedToDos);
+  };
+
+  const handleUpdateAssetTags = (assetId: string, newTags: string[]) => {
+    setGenerationHistory(prevHistory => 
+        prevHistory.map(item => 
+            item.id === assetId ? { ...item, tags: newTags } : item
+        )
+    );
   };
 
   const handleAddModel = (name: string, imageData: ImageData) => {
@@ -544,7 +735,7 @@ const App: React.FC = () => {
   };
   
   // --- Billing & Subscription Handlers ---
-  const handleUpdateSubscription = (plan: 'Free' | 'Pro') => {
+  const handleUpdateSubscription = (plan: 'Freemium' | 'Executive') => {
     if (!user) return;
     
     let newSubscription: SubscriptionPlan;
@@ -553,14 +744,14 @@ const App: React.FC = () => {
     const nextMonth = new Date();
     nextMonth.setMonth(nextMonth.getMonth() + 1);
 
-    if (plan === 'Pro') {
-      newSubscription = { plan: 'Pro', creditsPerMonth: 500, nextBillingDate: nextMonth.toISOString() };
+    if (plan === 'Executive') {
+      newSubscription = { plan: 'Executive', creditsPerMonth: 500, nextBillingDate: nextMonth.toISOString() };
       creditUpdate += 500; // Add credits immediately on upgrade
-      billingHistoryUpdate = { id: `sub_${Date.now()}`, date: new Date().toISOString(), description: "Superdayz Pro Subscription", amount: 29 };
-    } else { // Downgrading to Free
-      newSubscription = { plan: 'Free', creditsPerMonth: 5, nextBillingDate: null };
+      billingHistoryUpdate = { id: `sub_${Date.now()}`, date: new Date().toISOString(), description: "Superdayz Executive Subscription", amount: 29 };
+    } else { // Downgrading to Freemium
+      newSubscription = { plan: 'Freemium', creditsPerMonth: 5, nextBillingDate: null };
       // User keeps their purchased credits, but monthly grant stops.
-      billingHistoryUpdate = { id: `sub_${Date.now()}`, date: new Date().toISOString(), description: "Plan changed to Free", amount: 0 };
+      billingHistoryUpdate = { id: `sub_${Date.now()}`, date: new Date().toISOString(), description: "Plan changed to Freemium", amount: 0 };
     }
     
     setUser(prevUser => {
@@ -640,15 +831,15 @@ const App: React.FC = () => {
       const rawImages = await generatePhotoshootImage(productImage, modelImage, constructedPrompt, user.role, brandKitToApply);
       
       const watermarkText = "created by heart @2025 - Ananda Agung Prasetyo";
-      const watermarkedImages = await Promise.all(
-        rawImages.map(img => addWatermark(img, watermarkText))
-      );
+      const finalImages = isWatermarkEnabled
+        ? await Promise.all(rawImages.map(img => addWatermark(img, watermarkText)))
+        : rawImages;
       
       const generationTimestamp = Date.now();
       const newSessionItems: SessionImage[] = [];
       const newHistoryItems: GenerationHistoryItem[] = [];
 
-      watermarkedImages.forEach((imgSrc, index) => {
+      finalImages.forEach((imgSrc, index) => {
         const itemId = `photoshoot_${generationTimestamp}_${index}`;
         newSessionItems.push({ id: itemId, src: imgSrc });
         newHistoryItems.push({
@@ -657,6 +848,7 @@ const App: React.FC = () => {
           createdAt: new Date().toISOString(),
           src: imgSrc,
           prompt: constructedPrompt,
+          tags: [],
         });
       });
       
@@ -670,7 +862,7 @@ const App: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [productImage, modelImage, user, sceneStyle, modelPose, lighting, customPrompt, applyBrandKit, deductCredit, addItemsToHistory]);
+  }, [productImage, modelImage, user, sceneStyle, modelPose, lighting, customPrompt, applyBrandKit, isWatermarkEnabled, deductCredit, addItemsToHistory]);
 
 
   const handleGenerateMockup = useCallback(async () => {
@@ -704,15 +896,15 @@ const App: React.FC = () => {
       const rawImages = await generateMockupImage(designImage, templateImageData, backgroundPrompt, brandKitToApply);
 
       const watermarkText = "created by heart @2025 - Ananda Agung Prasetyo";
-      const watermarkedImages = await Promise.all(
-        rawImages.map(img => addWatermark(img, watermarkText))
-      );
+      const finalImages = isWatermarkEnabled
+          ? await Promise.all(rawImages.map(img => addWatermark(img, watermarkText)))
+          : rawImages;
       
       const generationTimestamp = Date.now();
       const newSessionItems: SessionImage[] = [];
       const newHistoryItems: GenerationHistoryItem[] = [];
 
-      watermarkedImages.forEach((imgSrc, index) => {
+      finalImages.forEach((imgSrc, index) => {
           const itemId = `mockup_${generationTimestamp}_${index}`;
           newSessionItems.push({ id: itemId, src: imgSrc });
           newHistoryItems.push({
@@ -721,6 +913,7 @@ const App: React.FC = () => {
               createdAt: new Date().toISOString(),
               src: imgSrc,
               prompt: historyPrompt,
+              tags: [],
           });
       });
 
@@ -734,7 +927,7 @@ const App: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [designImage, selectedTemplate, user, backgroundStyle, customBackground, applyBrandKit, deductCredit, addItemsToHistory]);
+  }, [designImage, selectedTemplate, user, backgroundStyle, customBackground, applyBrandKit, isWatermarkEnabled, deductCredit, addItemsToHistory]);
 
   const handleGenerateImage = useCallback(async () => {
     if (!navigator.onLine) {
@@ -759,13 +952,15 @@ const App: React.FC = () => {
       const rawImage = await generateImageFromPrompt(prompt, stylePreset, aspectRatio, brandKitToApply);
       
       const watermarkText = "created by heart @2025 - Ananda Agung Prasetyo";
-      const watermarkedImage = await addWatermark(rawImage, watermarkText);
-      
+      const finalImage = isWatermarkEnabled
+          ? await addWatermark(rawImage, watermarkText)
+          : rawImage;
+
       const newItemId = `image_${Date.now()}`;
       
       const newItem: SessionImage = {
         id: newItemId,
-        src: watermarkedImage,
+        src: finalImage,
       };
       setGeneratedImages(prev => [newItem, ...prev]);
 
@@ -773,8 +968,9 @@ const App: React.FC = () => {
         id: newItemId,
         type: 'image',
         createdAt: new Date().toISOString(),
-        src: watermarkedImage,
+        src: finalImage,
         prompt: historyPrompt,
+        tags: [],
       };
       addItemsToHistory([newHistoryItem]);
 
@@ -785,7 +981,187 @@ const App: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [prompt, user, stylePreset, aspectRatio, applyBrandKit, deductCredit, addItemsToHistory]);
+  }, [prompt, user, stylePreset, aspectRatio, applyBrandKit, isWatermarkEnabled, deductCredit, addItemsToHistory]);
+  
+  const handleGeneratePose = useCallback(async () => {
+    if (!navigator.onLine) {
+      setError("You appear to be offline. Please check your internet connection.");
+      return;
+    }
+    if (!posedModelImage || !posePrompt.trim() || !user) {
+      setError('Please upload a model image and describe the new pose.');
+      return;
+    }
+    if (user.credits <= 0) {
+      setError('You are out of credits. Please get more to continue.');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const rawImages = await generatePosedImage(posedModelImage, posePrompt);
+      const watermarkText = "created by heart @2025 - Ananda Agung Prasetyo";
+      const finalImages = isWatermarkEnabled
+        ? await Promise.all(rawImages.map(img => addWatermark(img, watermarkText)))
+        : rawImages;
+
+      const generationTimestamp = Date.now();
+      const newSessionItems: SessionImage[] = [];
+      const newHistoryItems: GenerationHistoryItem[] = [];
+
+      finalImages.forEach((imgSrc, index) => {
+        const itemId = `pose_${generationTimestamp}_${index}`;
+        newSessionItems.push({ id: itemId, src: imgSrc });
+        newHistoryItems.push({
+          id: itemId,
+          type: 'pose',
+          createdAt: new Date().toISOString(),
+          src: imgSrc,
+          prompt: `Changed pose to: ${posePrompt}`,
+          tags: [],
+        });
+      });
+      
+      setGeneratedPoses(prev => [...newSessionItems, ...prev]);
+      addItemsToHistory(newHistoryItems);
+      deductCredit();
+
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : 'An unknown error occurred.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [posedModelImage, posePrompt, user, isWatermarkEnabled, deductCredit, addItemsToHistory]);
+  
+  const handleGenerateGroupPhoto = useCallback(async () => {
+    const validImages = groupImages.filter((img): img is ImageData => img !== null);
+    if (!navigator.onLine) {
+      setError("You appear to be offline. Please check your internet connection.");
+      return;
+    }
+    if (validImages.length < 2 || !groupBackground.trim() || !groupArrangement.trim() || !user) {
+      setError('Please upload at least 2 people and describe the scene and arrangement.');
+      return;
+    }
+    if (user.credits <= 0) {
+      setError('You are out of credits. Please get more to continue.');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    
+    const historyPrompt = `Group photo in scene: "${groupBackground}" with arrangement: "${groupArrangement}"`;
+
+    try {
+      const rawImages = await generateGroupPhoto(validImages, groupBackground, groupArrangement);
+      const watermarkText = "created by heart @2025 - Ananda Agung Prasetyo";
+      const finalImages = isWatermarkEnabled
+          ? await Promise.all(rawImages.map(img => addWatermark(img, watermarkText)))
+          : rawImages;
+      
+      const generationTimestamp = Date.now();
+      const newSessionItems: SessionImage[] = [];
+      const newHistoryItems: GenerationHistoryItem[] = [];
+
+      finalImages.forEach((imgSrc, index) => {
+        const itemId = `group_${generationTimestamp}_${index}`;
+        newSessionItems.push({ id: itemId, src: imgSrc });
+        newHistoryItems.push({
+          id: itemId,
+          type: 'group',
+          createdAt: new Date().toISOString(),
+          src: imgSrc,
+          prompt: historyPrompt,
+          tags: [],
+        });
+      });
+      
+      setGeneratedGroupPhotos(prev => [...newSessionItems, ...prev]);
+      addItemsToHistory(newHistoryItems);
+      deductCredit();
+
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : 'An unknown error occurred.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [groupImages, groupBackground, groupArrangement, user, isWatermarkEnabled, deductCredit, addItemsToHistory]);
+
+  const videoLoadingMessages = [
+    "Warming up the video engine...",
+    "Gathering creative photons...",
+    "Directing the digital actors...",
+    "Compositing video frames...",
+    "Rendering the final cut...",
+    "Polishing the pixels...",
+    "This is taking longer than usual, but good things are worth the wait!",
+    "Almost there, adding the final sparkle..."
+  ];
+ 
+  const handleGenerateVideo = useCallback(async () => {
+     if (!navigator.onLine) {
+       setError("You appear to be offline. Please check your internet connection.");
+       return;
+     }
+     if (!videoPrompt.trim() || !user) {
+       setError('Please enter a prompt.');
+       return;
+     }
+     const creditCost = 5; // Video generation is more expensive
+     if (user.credits < creditCost) {
+       setError('You do not have enough credits for video generation.');
+       return;
+     }
+ 
+     setIsLoading(true);
+     setError(null);
+ 
+     // Loading message cycling
+     let messageIndex = 0;
+     setVideoLoadingMessage(videoLoadingMessages[messageIndex]);
+     const messageInterval = setInterval(() => {
+       messageIndex = (messageIndex + 1) % videoLoadingMessages.length;
+       setVideoLoadingMessage(videoLoadingMessages[messageIndex]);
+     }, 8000); // Change message every 8 seconds
+ 
+     try {
+       const rawVideos = await generateVideo(videoPrompt, videoSourceImage ?? undefined);
+       
+       const generationTimestamp = Date.now();
+       const newSessionItems: SessionVideo[] = [];
+       const newHistoryItems: GenerationHistoryItem[] = [];
+ 
+       rawVideos.forEach((videoSrc, index) => {
+         const itemId = `video_${generationTimestamp}_${index}`;
+         newSessionItems.push({ id: itemId, src: videoSrc });
+         newHistoryItems.push({
+           id: itemId,
+           type: 'video',
+           createdAt: new Date().toISOString(),
+           src: videoSrc,
+           prompt: videoPrompt,
+           tags: [],
+         });
+       });
+       
+       setGeneratedVideos(prev => [...newSessionItems, ...prev]);
+       addItemsToHistory(newHistoryItems);
+       deductCredit(creditCost);
+ 
+     } catch (err) {
+       console.error(err);
+       setError(err instanceof Error ? err.message : 'An unknown error occurred during video generation.');
+     } finally {
+       clearInterval(messageInterval);
+       setIsLoading(false);
+     }
+  }, [videoPrompt, videoSourceImage, user, deductCredit, addItemsToHistory]);
+
 
   const handleSendMessage = useCallback(async (message: string) => {
       if (!navigator.onLine) {
@@ -870,6 +1246,7 @@ const App: React.FC = () => {
         createdAt: new Date().toISOString(),
         idea: idea,
         prompt: `Topic: '${ideaTopic}' | Type: '${ideaType}'`,
+        tags: [],
       }));
       addItemsToHistory(newHistoryItems);
 
@@ -907,6 +1284,87 @@ const App: React.FC = () => {
     }
   }, [user, deductCredit]);
 
+  const handleGenerateStrategy = useCallback(async (goal: string, audience: string) => {
+    if (!navigator.onLine) {
+        setError("You appear to be offline. Please check your internet connection.");
+        return;
+    }
+    if (!user || user.credits <= 0) {
+        setError('You are out of credits. Please get more to continue.');
+        return;
+    }
+    setIsLoading(true);
+    setError(null);
+    setGeneratedStrategy(null);
+    try {
+        const result = await generateMarketingStrategy(goal, audience);
+        setGeneratedStrategy(result);
+        deductCredit();
+    } catch (err) {
+        setError(err instanceof Error ? err.message : 'An unknown error occurred while generating the strategy.');
+    } finally {
+        setIsLoading(false);
+    }
+  }, [user, deductCredit]);
+
+  const handleGenerateTrendReport = useCallback(async (country: string) => {
+    if (!navigator.onLine) {
+        setError("You appear to be offline. Please check your internet connection.");
+        return;
+    }
+    if (!user || user.credits <= 0) {
+        setError('You are out of credits. Please get more to continue.');
+        return;
+    }
+    setIsLoading(true);
+    setError(null);
+    setTrendReport(null);
+    try {
+        const result = await generateTrendReport(country);
+        setTrendReport(result);
+        deductCredit();
+    } catch (err) {
+        setError(err instanceof Error ? err.message : 'An unknown error occurred while generating the trend report.');
+    } finally {
+        setIsLoading(false);
+    }
+  }, [user, deductCredit]);
+
+  const handleGenerateSimulation = useCallback(async (creatives: ImageData[], audience: string, channels: string) => {
+    if (!navigator.onLine) {
+        setError("You appear to be offline. Please check your internet connection.");
+        return;
+    }
+    if (!user || user.credits <= 0) {
+        setError('You are out of credits. Please get more to continue.');
+        return;
+    }
+    setIsLoading(true);
+    setError(null);
+    setSimulationReport(null);
+    try {
+        const result = await generatePredictiveSimulation(creatives, audience, channels);
+        setSimulationReport(result);
+
+        const newHistoryItem: PredictiveSimulationItem = {
+            id: `sim_${Date.now()}`,
+            type: 'predictiveSimulation',
+            createdAt: new Date().toISOString(),
+            report: result,
+            creatives: creatives,
+            prompt: `Audience: ${audience} | Channels: ${channels}`,
+            tags: [],
+        };
+        addItemsToHistory([newHistoryItem]);
+
+        deductCredit();
+    } catch (err) {
+        setError(err instanceof Error ? err.message : 'An unknown error occurred while generating the simulation.');
+    } finally {
+        setIsLoading(false);
+    }
+  }, [user, deductCredit, addItemsToHistory]);
+
   const handleOpenCopyModal = (imageSrc: string) => {
     setSelectedImageForCopy(imageSrc);
     setGeneratedCopyInModal([]);
@@ -932,6 +1390,31 @@ const App: React.FC = () => {
     setZoomedImageSrc(src);
   };
 
+  const handleOpenImageEditor = (id: string, src: string) => {
+    setEditingImage({ id, src });
+  };
+  
+  const handleSaveEditedImage = (editedSrc: string) => {
+    if (!editingImage) return;
+
+    const newHistoryItem: GeneratedImageItem = {
+        id: `edit_${Date.now()}`,
+        type: 'edit',
+        createdAt: new Date().toISOString(),
+        src: editedSrc,
+        prompt: `Edited from original generation`,
+        originalId: editingImage.id, // Link to original
+        tags: [],
+    };
+    addItemsToHistory([newHistoryItem]);
+    setEditingImage(null);
+  };
+
+  const handleUseTrend = (trendPrompt: string) => {
+    setPrompt(trendPrompt); // Pre-fill the prompt in the image generator
+    setView('imageGenerator');
+  };
+
   const renderContent = () => {
     switch (view) {
       case 'landing':
@@ -947,8 +1430,9 @@ const App: React.FC = () => {
             setView(v);
           };
 
+          const imageTypes: GenerationHistoryItem['type'][] = ['photoshoot', 'mockup', 'image', 'edit', 'pose', 'group'];
           const recentImageCreations = generationHistory
-            .filter((item): item is GeneratedImageItem => 'src' in item && !!item.src)
+            .filter((item): item is GeneratedImageItem => imageTypes.includes(item.type) && 'src' in item && !!item.src)
             .slice(0, 6)
             .map(item => item.src);
 
@@ -957,7 +1441,6 @@ const App: React.FC = () => {
               <Header
                 user={user}
                 onLogout={handleLogout}
-                onNavigateToBilling={() => handleNavigation('billing')}
                 activeView={view}
                 onNavigate={handleNavigation}
               />
@@ -971,7 +1454,7 @@ const App: React.FC = () => {
                   isLoading={isModalLoading}
                   error={error}
               />
-              {view === 'dashboard' && <DashboardScreen user={user} recentCreations={recentImageCreations} onNavigate={handleNavigation} />}
+              {view === 'dashboard' && <DashboardScreen user={user} recentCreations={recentImageCreations} onNavigate={handleNavigation} onImageClick={handleZoomImage} />}
               {view === 'app' && (
                 <MainAppScreen
                   user={user}
@@ -992,9 +1475,12 @@ const App: React.FC = () => {
                   setCustomPrompt={setCustomPrompt}
                   applyBrandKit={applyBrandKit}
                   setApplyBrandKit={setApplyBrandKit}
+                  isWatermarkEnabled={isWatermarkEnabled}
+                  setIsWatermarkEnabled={setIsWatermarkEnabled}
                   handleGenerate={handleGeneratePhotoshoot}
                   onGenerateCopy={handleOpenCopyModal}
                   onImageClick={handleZoomImage}
+                  onEditImage={handleOpenImageEditor}
                 />
               )}
               {view === 'mockup' && (
@@ -1013,9 +1499,12 @@ const App: React.FC = () => {
                     setCustomBackground={setCustomBackground}
                     applyBrandKit={applyBrandKit}
                     setApplyBrandKit={setApplyBrandKit}
+                    isWatermarkEnabled={isWatermarkEnabled}
+                    setIsWatermarkEnabled={setIsWatermarkEnabled}
                     handleGenerate={handleGenerateMockup}
                     onGenerateCopy={handleOpenCopyModal}
                     onImageClick={handleZoomImage}
+                    onEditImage={handleOpenImageEditor}
                   />
               )}
                {view === 'imageGenerator' && (
@@ -1032,9 +1521,64 @@ const App: React.FC = () => {
                     error={error}
                     applyBrandKit={applyBrandKit}
                     setApplyBrandKit={setApplyBrandKit}
+                    isWatermarkEnabled={isWatermarkEnabled}
+                    setIsWatermarkEnabled={setIsWatermarkEnabled}
                     handleGenerate={handleGenerateImage}
                     onGenerateCopy={handleOpenCopyModal}
                     onImageClick={handleZoomImage}
+                    onEditImage={handleOpenImageEditor}
+                  />
+              )}
+               {view === 'poseGenerator' && (
+                  <PoseGeneratorScreen
+                    user={user}
+                    modelImage={posedModelImage}
+                    setModelImage={setPosedModelImage}
+                    posePrompt={posePrompt}
+                    setPosePrompt={setPosePrompt}
+                    generatedImages={generatedPoses}
+                    isLoading={isLoading}
+                    error={error}
+                    isWatermarkEnabled={isWatermarkEnabled}
+                    setIsWatermarkEnabled={setIsWatermarkEnabled}
+                    handleGenerate={handleGeneratePose}
+                    onGenerateCopy={handleOpenCopyModal}
+                    onImageClick={handleZoomImage}
+                    onEditImage={handleOpenImageEditor}
+                  />
+              )}
+               {view === 'groupPhoto' && (
+                  <GroupPhotoScreen
+                    user={user}
+                    groupImages={groupImages}
+                    setGroupImages={setGroupImages}
+                    backgroundPrompt={groupBackground}
+                    setBackgroundPrompt={setGroupBackground}
+                    arrangementPrompt={groupArrangement}
+                    setArrangementPrompt={setGroupArrangement}
+                    generatedImages={generatedGroupPhotos}
+                    isLoading={isLoading}
+                    error={error}
+                    isWatermarkEnabled={isWatermarkEnabled}
+                    setIsWatermarkEnabled={setIsWatermarkEnabled}
+                    handleGenerate={handleGenerateGroupPhoto}
+                    onGenerateCopy={handleOpenCopyModal}
+                    onImageClick={handleZoomImage}
+                    onEditImage={handleOpenImageEditor}
+                  />
+              )}
+              {view === 'videoGenerator' && (
+                  <VideoGeneratorScreen
+                    user={user}
+                    prompt={videoPrompt}
+                    setPrompt={setVideoPrompt}
+                    sourceImage={videoSourceImage}
+                    setSourceImage={setVideoSourceImage}
+                    generatedVideos={generatedVideos}
+                    isLoading={isLoading}
+                    loadingMessage={videoLoadingMessage}
+                    error={error}
+                    handleGenerate={handleGenerateVideo}
                   />
               )}
               {view === 'aiTalk' && (
@@ -1088,10 +1632,46 @@ const App: React.FC = () => {
                 />
               )}
               {view === 'history' && (
-                  <HistoryScreen history={generationHistory} onImageClick={handleZoomImage} />
+                  <HistoryScreen 
+                    history={generationHistory} 
+                    onImageClick={handleZoomImage} 
+                    onEditImage={handleOpenImageEditor} 
+                    onUpdateTags={handleUpdateAssetTags}
+                  />
               )}
               {view === 'todo' && (
                   <ToDoScreen todos={toDoList} onUpdateToDos={handleUpdateToDos} />
+              )}
+              {view === 'creativeJourney' && (
+                  <CreativeJourneyScreen user={user} history={generationHistory} />
+              )}
+              {view === 'trendRadar' && (
+                  <TrendRadarScreen
+                    user={user}
+                    isLoading={isLoading}
+                    error={error}
+                    trendReport={trendReport}
+                    onGenerateReport={handleGenerateTrendReport}
+                    onUseTrend={handleUseTrend}
+                  />
+              )}
+              {view === 'strategyAssistant' && (
+                  <StrategyAssistantScreen
+                    user={user}
+                    isLoading={isLoading}
+                    error={error}
+                    generatedStrategy={generatedStrategy}
+                    handleGenerate={handleGenerateStrategy}
+                  />
+              )}
+               {view === 'predictiveSimulator' && (
+                  <PredictiveSimulatorScreen
+                    user={user}
+                    isLoading={isLoading}
+                    error={error}
+                    simulationReport={simulationReport}
+                    handleGenerate={handleGenerateSimulation}
+                  />
               )}
               {view === 'settings' && (
                   <SettingsScreen 
@@ -1145,11 +1725,26 @@ const App: React.FC = () => {
         />
       )}
       {user && reminderToast && <ReminderToast todo={reminderToast} onClose={() => setReminderToast(null)} />}
+      
+      {gamificationToast && (
+          <GamificationToast
+              title={gamificationToast.title}
+              description={gamificationToast.description}
+              onClose={() => setGamificationToast(null)}
+          />
+      )}
 
       <ImageZoomModal 
         isOpen={!!zoomedImageSrc}
         onClose={() => setZoomedImageSrc(null)}
         imageSrc={zoomedImageSrc}
+      />
+
+      <ImageEditorModal
+        isOpen={!!editingImage}
+        onClose={() => setEditingImage(null)}
+        onSave={handleSaveEditedImage}
+        imageSrc={editingImage?.src || null}
       />
 
       <div className="flex-grow flex flex-col z-10">

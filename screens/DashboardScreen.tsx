@@ -1,3 +1,4 @@
+
 import React, { useRef } from 'react';
 import type { User, AppView } from '../types';
 import { CameraIcon } from '../components/icons/CameraIcon';
@@ -6,53 +7,62 @@ import { ImageIcon } from '../components/icons/ImageIcon';
 import { ChatIcon } from '../components/icons/ChatIcon';
 import { LightbulbIcon } from '../components/icons/LightbulbIcon';
 import { QuillIcon } from '../components/icons/QuillIcon';
+import { CrownIcon } from '../components/icons/CrownIcon';
+import { PoseIcon } from '../components/icons/PoseIcon';
+import { GroupIcon } from '../components/icons/GroupIcon';
+import { DownloadIcon } from '../components/icons/DownloadIcon';
+import { VideoIcon } from '../components/icons/VideoIcon';
+import { RadarIcon } from '../components/icons/RadarIcon';
+import { StrategyIcon } from '../components/icons/StrategyIcon';
+import { TestTubeIcon } from '../components/icons/TestTubeIcon';
 
 
 interface DashboardScreenProps {
   user: User;
   recentCreations: string[];
   onNavigate: (view: AppView) => void;
+  onImageClick: (imageSrc: string) => void;
 }
 
 const curatedImages = [
   { 
     id: 1, 
-    src: 'https://images.unsplash.com/photo-1599329994901-accd5ebbb0ec?q=80&w=987&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', 
+    src: 'https://images.unsplash.com/photo-1599329994901-accd5ebbb0ec?q=80&w=987&auto=format&fit=crop&ixlib-rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', 
     alt: 'Two female models in tracksuits in an urban setting.',
     prompt: 'Streetwear fashion shoot, two models in an urban brick warehouse, moody lighting, full body shot.',
     span: 'col-span-1 sm:col-span-1'
   },
   { 
     id: 2, 
-    src: 'https://images.unsplash.com/photo-1600361675600-7eea39b41f3b?q=80&w=1003&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', 
+    src: 'https://images.unsplash.com/photo-1600361675600-7eea39b41f3b?q=80&w=1003&auto-format&fit=crop&ixlib-rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', 
     alt: 'Female model wearing sportswear on a sunny beach.',
     prompt: 'Summer lifestyle photoshoot, male model on a sunny beach, relaxed pose, vibrant colors.',
     span: 'col-span-1'
   },
   { 
     id: 3, 
-    src: 'https://images.unsplash.com/photo-1633450802884-35b041181007?q=80&w=987&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', 
+    src: 'https://images.unsplash.com/photo-1633450802884-35b041181007?q=80&w=987&auto=format&fit=crop&ixlib-rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', 
     alt: 'High-fashion model with a white handbag.',
     prompt: 'High-fashion portrait, editorial style, model with pixie cut holding a white designer handbag.',
     span: 'col-span-1'
   },
   { 
     id: 4, 
-    src: 'https://images.unsplash.com/photo-1642453208368-7c09aa272829?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', 
+    src: 'https://images.unsplash.com/photo-1642453208368-7c09aa272829?q=80&w=2070&auto=format&fit=crop&ixlib-rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', 
     alt: 'Female model in a dynamic pose on a chair in a studio.',
     prompt: 'Avant-garde fashion, male model in a dynamic pose on a chair, studio shot with stark white background.',
     span: 'col-span-3 sm:col-span-3'
   },
   { 
     id: 5, 
-    src: 'https://images.unsplash.com/photo-1721618878163-5b9387ead23b?q=80&w=987&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+    src: 'https://images.unsplash.com/photo-1721618878163-5b9387ead23b?q=80&w=987&auto-format&fit=crop&ixlib-rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     alt: 'Female model for a luxury brand reclining on a sofa.',
     prompt: 'Luxury brand campaign, opulent gold interior, model reclining on a vintage sofa in a lavish room.',
     span: 'col-span-1 sm:col-span-2'
   },
    { 
     id: 6, 
-    src: 'https://images.unsplash.com/photo-1535292862972-e61ccf5b7e61?q=80&w=994&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', 
+    src: 'https://images.unsplash.com/photo-1535292862972-e61ccf5b7e61?q=80&w=994&auto-format&fit=crop&ixlib-rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', 
     alt: 'Hands holding up classic sneakers against a blue sky.',
     prompt: 'Product-focused shot, dynamic group of hands holding up classic sneakers against a clean sky.',
     span: 'col-span-1'
@@ -148,20 +158,38 @@ const CuratedImageCard: React.FC<{ image: typeof curatedImages[0] }> = ({ image 
     );
 };
 
-export const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, recentCreations, onNavigate }) => {
+export const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, recentCreations, onNavigate, onImageClick }) => {
   return (
     <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-12">
-        <h1 className="text-3xl font-bold text-white">What would you like to create today?</h1>
+        <div className="flex flex-wrap items-center gap-4">
+            <h1 className="text-3xl font-bold text-white">What would you like to create today?</h1>
+            {/* FIX: Updated plan check from 'Pro' to 'Executive' */}
+            {user.subscription?.plan === 'Executive' && (
+                <div className="hidden sm:flex items-center gap-2 bg-yellow-400/20 border border-yellow-500/30 text-yellow-300 font-semibold px-3 py-1 rounded-full text-sm animate-fade-in">
+                    <CrownIcon className="w-4 h-4" />
+                    <span>Executive Member</span>
+                </div>
+            )}
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6 mb-16">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 md:gap-6 mb-16">
+        {/* Row 1: Strategy & Ideas */}
+        <ToolCard icon={<RadarIcon className="w-8 h-8" />} title="AI Trend Radar" onClick={() => onNavigate('trendRadar')} />
+        <ToolCard icon={<StrategyIcon className="w-8 h-8" />} title="AI Strategy Asst" onClick={() => onNavigate('strategyAssistant')} />
+        <ToolCard icon={<TestTubeIcon className="w-8 h-8" />} title="AI Media Lab" onClick={() => onNavigate('predictiveSimulator')} />
         <ToolCard icon={<LightbulbIcon className="w-8 h-8" />} title="AI Idea Gen" onClick={() => onNavigate('creativeIdeas')} />
         <ToolCard icon={<QuillIcon className="w-8 h-8" />} title="AI Copywriter" onClick={() => onNavigate('copywriter')} />
+        <ToolCard icon={<ChatIcon className="w-8 h-8" />} title="Talk with AI" onClick={() => onNavigate('aiTalk')} />
+        
+        {/* Row 2: Content Creation */}
         <ToolCard icon={<ImageIcon className="w-8 h-8" />} title="AI Image Gen" onClick={() => onNavigate('imageGenerator')} />
+        <ToolCard icon={<VideoIcon className="w-8 h-8" />} title="AI Video Gen" onClick={() => onNavigate('videoGenerator')} />
         <ToolCard icon={<CameraIcon className="w-8 h-8" />} title="AI Photoshoot" onClick={() => onNavigate('app')} />
         <ToolCard icon={<TshirtIcon className="w-8 h-8" />} title="AI Mockups" onClick={() => onNavigate('mockup')} />
-        <ToolCard icon={<ChatIcon className="w-8 h-8" />} title="Talk with AI" onClick={() => onNavigate('aiTalk')} />
+        <ToolCard icon={<PoseIcon className="w-8 h-8" />} title="AI Pose Gen" onClick={() => onNavigate('poseGenerator')} />
+        <ToolCard icon={<GroupIcon className="w-8 h-8" />} title="AI Group Photo" onClick={() => onNavigate('groupPhoto')} />
       </div>
 
       {recentCreations.length > 0 && (
@@ -169,8 +197,23 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, recentCr
           <h2 className="text-2xl font-bold text-white mb-6">Recent creations</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {recentCreations.slice(0, 6).map((image, index) => (
-              <div key={index} className="aspect-square bg-slate-800 rounded-lg overflow-hidden">
+              <div 
+                key={index} 
+                className="relative group aspect-square bg-slate-800 rounded-lg overflow-hidden cursor-pointer"
+                onClick={() => onImageClick(image)}
+              >
                 <img src={image} alt={`Recent creation ${index + 1}`} className="w-full h-full object-cover" />
+                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                  <a
+                    href={image}
+                    download={`superdayz-creation-${Date.now()}.png`}
+                    className="flex items-center gap-2 bg-white/20 backdrop-blur-sm text-white font-semibold py-2 px-3 rounded-full hover:bg-white/30 transition-colors pointer-events-auto"
+                    title="Download Image"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <DownloadIcon className="w-5 h-5" />
+                  </a>
+                </div>
               </div>
             ))}
           </div>
