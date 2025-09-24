@@ -4,6 +4,9 @@
 
 
 
+
+
+
 import { GoogleGenAI, Modality, Type } from "@google/genai";
 // FIX: Corrected the type name from GenerateVideosOperationResponse to GenerateVideosOperation.
 import type { GenerateVideosOperation } from "@google/genai";
@@ -138,7 +141,7 @@ export async function generateMockupImage(
       2.  **Lighting and Shadows:** The design must inherit the lighting, shadows, and texture from the template image, making it look like it was part of the original photo.
       3.  **Seamless Integration:** The final composite should be photorealistic and seamless.
       4.  **Scene Placement:** The final mockup object should be naturally integrated into the background scene, with matching lighting and shadows.
-      5.  **Output:** Produce only the final, high-resolution image. Do not include any text, logos, or watermarks.
+      5.  **Output:** Produce 2 distinct, high-resolution variations of the final scene. Do not include any text, logos, or watermarks in the output images.
     `;
     
     const textPart = { text: fullPrompt };
@@ -948,5 +951,57 @@ export async function generateTagsForImage(imageData: ImageData): Promise<string
   } catch (error) {
     console.error("Error generating tags for image:", error);
     return [];
+  }
+}
+
+export async function generateLogoVariations(
+  logoImage: ImageData,
+): Promise<string[]> {
+  try {
+    const fullPrompt = `
+      As an expert logo designer, you are provided with an existing logo image.
+      Your task is to generate 3 distinct variations of this logo.
+      
+      **Crucial Instructions:**
+      1.  **Maintain Core Concept:** Keep the fundamental idea, brand name, and style of the original logo.
+      2.  **Explore Variations:** You can explore different layouts, icon refinements, font treatments, or simplified/monochrome versions.
+      3.  **Clean Background:** All generated logos MUST be on a solid, clean, white background (#FFFFFF).
+      4.  **Output:** Output only the 3 final image variations. Do not include any text or rationale.
+    `;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash-image-preview',
+      contents: {
+        parts: [
+          { text: fullPrompt },
+          dataUrlToInlineData(logoImage.base64),
+        ],
+      },
+      config: {
+        responseModalities: [Modality.IMAGE, Modality.TEXT],
+      },
+    });
+
+    const generatedImages: string[] = [];
+    if (response.candidates && response.candidates.length > 0) {
+        for (const part of response.candidates[0].content.parts) {
+            if (part.inlineData) {
+                const base64ImageBytes: string = part.inlineData.data;
+                const mimeType = part.inlineData.mimeType || 'image/jpeg';
+                generatedImages.push(`data:${mimeType};base64,${base64ImageBytes}`);
+            }
+        }
+    }
+
+    if (generatedImages.length === 0) {
+      throw new Error("The model did not return any logo variations. Please try again.");
+    }
+    
+    // Ensure we return up to 3 images
+    return generatedImages.slice(0, 3);
+
+  } catch (error) {
+    console.error("Error generating logo variations with Gemini:", error);
+    throw new Error("Failed to generate logo variations.");
   }
 }

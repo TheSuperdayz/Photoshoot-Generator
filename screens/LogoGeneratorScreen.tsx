@@ -9,6 +9,7 @@ import { Alert } from '../components/Alert';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { LogoCreatorIcon } from '../components/icons/LogoCreatorIcon';
 import { DownloadIcon } from '../components/icons/DownloadIcon';
+import { SparklesIcon } from '../components/icons/SparklesIcon';
 
 // Types
 import type { User, SessionImage } from '../types';
@@ -30,6 +31,7 @@ interface LogoGeneratorScreenProps {
     error: string | null;
     handleGenerate: () => void;
     onImageClick: (imageSrc: string) => void;
+    onGenerateVariations: (logo: SessionImage) => void;
 }
 
 export const LogoGeneratorScreen: React.FC<LogoGeneratorScreenProps> = (props) => {
@@ -109,9 +111,9 @@ export const LogoGeneratorScreen: React.FC<LogoGeneratorScreenProps> = (props) =
 
       {/* Logo Gallery */}
       <div className="lg:col-span-8">
-        {props.isLoading ? (
-          <div className="w-full h-[60vh] flex flex-col items-center justify-center bg-white/5 rounded-2xl"><LoadingSpinner /><p className="text-lg mt-4">Designing your logos...</p></div>
-        ) : props.generatedLogos.length === 0 ? (
+        {props.isLoading && props.generatedLogos.length === 0 ? (
+          <div className="w-full h-[60vh] flex flex-col items-center justify-center bg-white/5 rounded-2xl"><LoadingSpinner /><p className="text-lg mt-4">Generating...</p></div>
+        ) : !props.isLoading && props.generatedLogos.length === 0 ? (
           <div className="w-full h-[60vh] flex flex-col items-center justify-center bg-white/5 rounded-2xl border-2 border-dashed border-gray-700 text-center p-4">
             <LogoCreatorIcon className="w-16 h-16 text-gray-600 mx-auto" />
             <h3 className="mt-4 text-xl font-semibold text-gray-300">Your logo concepts will appear here</h3>
@@ -122,15 +124,26 @@ export const LogoGeneratorScreen: React.FC<LogoGeneratorScreenProps> = (props) =
             {props.generatedLogos.slice(0, 4).map((logo, index) => (
               <div 
                 key={logo.id} 
-                className="flex flex-col animate-item-enter"
+                className={`flex flex-col animate-item-enter transition-all duration-300 ${logo.isParent ? 'ring-4 ring-sky-400 rounded-2xl p-1' : ''}`}
                 style={{ animationDelay: `${Math.min(index * 50, 500)}ms`, animationFillMode: 'backwards' }}
               >
                 <div 
-                  className="relative group aspect-square bg-white rounded-lg overflow-hidden shadow-lg transition-transform duration-300 hover:scale-105 cursor-zoom-in"
-                  onClick={() => props.onImageClick(logo.src)}
+                  className="relative group aspect-square bg-white rounded-lg overflow-hidden shadow-lg transition-transform duration-300 hover:scale-105"
                 >
-                  <img src={logo.src} alt={`Generated logo ${index + 1}`} className="w-full h-full object-contain p-4" />
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center pointer-events-none">
+                  <div className="w-full h-full cursor-zoom-in" onClick={() => props.onImageClick(logo.src)}>
+                    <img src={logo.src} alt={`Generated logo ${index + 1}`} className="w-full h-full object-contain p-4" />
+                  </div>
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-2 pointer-events-none">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        props.onGenerateVariations(logo);
+                      }}
+                      className="flex items-center gap-2 bg-white/20 backdrop-blur-sm text-white font-semibold py-2 px-3 rounded-full hover:bg-white/30 transition-colors pointer-events-auto"
+                      title="Generate Variations"
+                    >
+                      <SparklesIcon className="w-5 h-5" />
+                    </button>
                     <a
                       href={logo.src}
                       download={`superdayz-logo-${logo.id}.jpg`}

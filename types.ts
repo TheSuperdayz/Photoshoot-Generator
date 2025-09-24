@@ -1,5 +1,6 @@
 
 
+
 export interface ImageData {
   base64: string;
   mimeType: string;
@@ -9,6 +10,10 @@ export interface SessionImage {
   id: string;
   src: string;
   rationale?: string;
+  isParent?: boolean;
+  // FIX: Add prompt and tags to SessionImage to align with history items.
+  prompt?: string;
+  tags?: string[];
 }
 
 export interface SessionVideo {

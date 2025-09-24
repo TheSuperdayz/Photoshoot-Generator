@@ -1,3 +1,5 @@
+
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { GoogleGenAI } from "@google/genai";
 import type { Chat } from "@google/genai";
@@ -12,6 +14,7 @@ import { Alert } from './components/Alert';
 import { ImageZoomModal } from './components/ImageZoomModal';
 import { GamificationToast } from './components/GamificationToast';
 import { ImageEditorModal } from './components/ImageEditorModal';
+import { ErrorToast } from './components/ErrorToast';
 
 // Screens
 import { LandingScreen } from './screens/LandingScreen';
@@ -39,7 +42,7 @@ import { LogoGeneratorScreen } from './screens/LogoGeneratorScreen';
 
 
 // Services
-import { generatePhotoshootImage, generateMockupImage, generateImageFromPrompt, generateCreativeIdeas, generateCopywritingContent, generatePosedImage, generateGroupPhoto, generateVideo, generateMarketingStrategy, generateTrendReport, generatePredictiveSimulation, generateLogo, generateTagsForImage } from './services/geminiService';
+import { generatePhotoshootImage, generateMockupImage, generateImageFromPrompt, generateCreativeIdeas, generateCopywritingContent, generatePosedImage, generateGroupPhoto, generateVideo, generateMarketingStrategy, generateTrendReport, generatePredictiveSimulation, generateLogo, generateTagsForImage, generateLogoVariations } from './services/geminiService';
 import { achievements, getXpForNextLevel } from './services/gamificationService';
 
 // Types
@@ -114,6 +117,7 @@ const App: React.FC = () => {
   // App State
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorToast, setErrorToast] = useState<string | null>(null);
   const [applyBrandKit, setApplyBrandKit] = useState<boolean>(false);
   const [isWatermarkEnabled, setIsWatermarkEnabled] = useState<boolean>(true);
 
@@ -226,7 +230,9 @@ const App: React.FC = () => {
 
   const handleSelectPersonality = useCallback((personality: string) => {
       if (!process.env.API_KEY) {
-        setError("API key is not configured.");
+        const msg = "API key is not configured.";
+        setError(msg);
+        setErrorToast(msg);
         return;
       }
       setSelectedPersonality(personality);
@@ -241,7 +247,9 @@ const App: React.FC = () => {
           });
           setChatInstance(chat);
       } catch (err) {
-          setError('Failed to initialize AI chat.');
+          const msg = 'Failed to initialize AI chat.';
+          setError(msg);
+          setErrorToast(msg);
           console.error(err);
       }
   }, []);
@@ -308,7 +316,9 @@ const App: React.FC = () => {
         localStorage.setItem(`superdayzHistory_${user.email}`, JSON.stringify(generationHistory));
       } catch (error) {
         console.error("Error saving history to localStorage:", error);
-        setError("Your session history could not be saved, likely because browser storage is full. Older history items might be removed.");
+        const msg = "Your session history could not be saved, likely because browser storage is full. Older history items might be removed.";
+        setError(msg);
+        setErrorToast(msg);
       }
     }
   }, [generationHistory, user?.email]);
@@ -331,6 +341,18 @@ const App: React.FC = () => {
     }
   }, [gamificationToast]);
   // --- End Gamification ---
+
+  // --- Error Toast Manager ---
+  useEffect(() => {
+    if (errorToast) {
+        const timer = setTimeout(() => {
+            setErrorToast(null);
+        }, 8000); // Show toast for 8 seconds
+        return () => clearTimeout(timer);
+    }
+  }, [errorToast]);
+  // --- End Error Toast ---
+
 
   // --- Subscription-based Feature Control ---
   useEffect(() => {
@@ -860,7 +882,9 @@ const App: React.FC = () => {
 
   const handleGeneratePhotoshoot = useCallback(async () => {
     if (!navigator.onLine) {
-      setError("You appear to be offline. Please check your internet connection.");
+      const msg = "You appear to be offline. Please check your internet connection.";
+      setError(msg);
+      setErrorToast(msg);
       return;
     }
     if (!productImage || !modelImage || !user) {
@@ -898,14 +922,16 @@ const App: React.FC = () => {
 
       for (const [index, imgSrc] of finalImages.entries()) {
         const itemId = `photoshoot_${generationTimestamp}_${index}`;
-        newSessionItems.push({ id: itemId, src: imgSrc });
-
+        
         let autoTags: string[] = [];
         try {
           autoTags = await generateTagsForImage({ base64: imgSrc, mimeType: 'image/jpeg' });
         } catch (tagError) {
           console.warn("Auto-tagging failed for a photoshoot image, proceeding without tags.", tagError);
         }
+
+        // FIX: Populate prompt and tags in SessionImage for consistency.
+        newSessionItems.push({ id: itemId, src: imgSrc, prompt: constructedPrompt, tags: autoTags });
 
         newHistoryItems.push({
           id: itemId,
@@ -923,7 +949,9 @@ const App: React.FC = () => {
 
     } catch (err) {
       console.error(err);
-      setError(err instanceof Error ? err.message : 'An unknown error occurred.');
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
+      setError(errorMessage);
+      setErrorToast(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -932,7 +960,9 @@ const App: React.FC = () => {
 
   const handleGenerateMockup = useCallback(async () => {
     if (!navigator.onLine) {
-      setError("You appear to be offline. Please check your internet connection.");
+      const msg = "You appear to be offline. Please check your internet connection.";
+      setError(msg);
+      setErrorToast(msg);
       return;
     }
     if (!designImage || !selectedTemplate || !user) {
@@ -971,7 +1001,6 @@ const App: React.FC = () => {
 
       for (const [index, imgSrc] of finalImages.entries()) {
           const itemId = `mockup_${generationTimestamp}_${index}`;
-          newSessionItems.push({ id: itemId, src: imgSrc });
           
           let autoTags: string[] = [];
           try {
@@ -979,6 +1008,9 @@ const App: React.FC = () => {
           } catch (tagError) {
             console.warn("Auto-tagging failed for a mockup image, proceeding without tags.", tagError);
           }
+
+          // FIX: Populate prompt and tags in SessionImage for consistency.
+          newSessionItems.push({ id: itemId, src: imgSrc, prompt: historyPrompt, tags: autoTags });
 
           newHistoryItems.push({
               id: itemId,
@@ -996,7 +1028,9 @@ const App: React.FC = () => {
 
     } catch (err) {
       console.error(err);
-      setError(err instanceof Error ? err.message : 'An unknown error occurred.');
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
+      setError(errorMessage);
+      setErrorToast(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -1004,7 +1038,9 @@ const App: React.FC = () => {
 
   const handleGenerateImage = useCallback(async () => {
     if (!navigator.onLine) {
-      setError("You appear to be offline. Please check your internet connection.");
+      const msg = "You appear to be offline. Please check your internet connection.";
+      setError(msg);
+      setErrorToast(msg);
       return;
     }
     if (!prompt.trim() || !user) {
@@ -1031,18 +1067,21 @@ const App: React.FC = () => {
 
       const newItemId = `image_${Date.now()}`;
       
-      const newItem: SessionImage = {
-        id: newItemId,
-        src: finalImage,
-      };
-      setGeneratedImages(prev => [newItem, ...prev]);
-
       let autoTags: string[] = [];
       try {
         autoTags = await generateTagsForImage({ base64: finalImage, mimeType: 'image/jpeg' });
       } catch (tagError) {
         console.warn("Auto-tagging failed for a generated image, proceeding without tags.", tagError);
       }
+      
+      // FIX: Populate prompt and tags in SessionImage for consistency.
+      const newItem: SessionImage = {
+        id: newItemId,
+        src: finalImage,
+        prompt: historyPrompt,
+        tags: autoTags,
+      };
+      setGeneratedImages(prev => [newItem, ...prev]);
 
       const newHistoryItem: GenerationHistoryItem = {
         id: newItemId,
@@ -1057,7 +1096,9 @@ const App: React.FC = () => {
       deductCredit();
     } catch (err) {
       console.error(err);
-      setError(err instanceof Error ? err.message : 'An unknown error occurred.');
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
+      setError(errorMessage);
+      setErrorToast(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -1065,7 +1106,9 @@ const App: React.FC = () => {
   
   const handleGeneratePose = useCallback(async () => {
     if (!navigator.onLine) {
-      setError("You appear to be offline. Please check your internet connection.");
+      const msg = "You appear to be offline. Please check your internet connection.";
+      setError(msg);
+      setErrorToast(msg);
       return;
     }
     if (!posedModelImage || !posePrompt.trim() || !user) {
@@ -1090,10 +1133,10 @@ const App: React.FC = () => {
       const generationTimestamp = Date.now();
       const newSessionItems: SessionImage[] = [];
       const newHistoryItems: GenerationHistoryItem[] = [];
+      const promptText = `Changed pose to: ${posePrompt}`;
 
       for (const [index, imgSrc] of finalImages.entries()) {
         const itemId = `pose_${generationTimestamp}_${index}`;
-        newSessionItems.push({ id: itemId, src: imgSrc });
         
         let autoTags: string[] = [];
         try {
@@ -1102,12 +1145,15 @@ const App: React.FC = () => {
           console.warn("Auto-tagging failed for a pose image, proceeding without tags.", tagError);
         }
 
+        // FIX: Populate prompt and tags in SessionImage for consistency.
+        newSessionItems.push({ id: itemId, src: imgSrc, prompt: promptText, tags: autoTags });
+
         newHistoryItems.push({
           id: itemId,
           type: 'pose',
           createdAt: new Date().toISOString(),
           src: imgSrc,
-          prompt: `Changed pose to: ${posePrompt}`,
+          prompt: promptText,
           tags: autoTags,
         });
       }
@@ -1118,7 +1164,9 @@ const App: React.FC = () => {
 
     } catch (err) {
       console.error(err);
-      setError(err instanceof Error ? err.message : 'An unknown error occurred.');
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
+      setError(errorMessage);
+      setErrorToast(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -1127,7 +1175,9 @@ const App: React.FC = () => {
   const handleGenerateGroupPhoto = useCallback(async () => {
     const validImages = groupImages.filter((img): img is ImageData => img !== null);
     if (!navigator.onLine) {
-      setError("You appear to be offline. Please check your internet connection.");
+      const msg = "You appear to be offline. Please check your internet connection.";
+      setError(msg);
+      setErrorToast(msg);
       return;
     }
     if (validImages.length < 2 || !groupBackground.trim() || !groupArrangement.trim() || !user) {
@@ -1157,7 +1207,6 @@ const App: React.FC = () => {
 
       for (const [index, imgSrc] of finalImages.entries()) {
         const itemId = `group_${generationTimestamp}_${index}`;
-        newSessionItems.push({ id: itemId, src: imgSrc });
         
         let autoTags: string[] = [];
         try {
@@ -1165,6 +1214,9 @@ const App: React.FC = () => {
         } catch (tagError) {
           console.warn("Auto-tagging failed for a group photo, proceeding without tags.", tagError);
         }
+
+        // FIX: Populate prompt and tags in SessionImage for consistency.
+        newSessionItems.push({ id: itemId, src: imgSrc, prompt: historyPrompt, tags: autoTags });
 
         newHistoryItems.push({
           id: itemId,
@@ -1182,7 +1234,9 @@ const App: React.FC = () => {
 
     } catch (err) {
       console.error(err);
-      setError(err instanceof Error ? err.message : 'An unknown error occurred.');
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
+      setError(errorMessage);
+      setErrorToast(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -1201,7 +1255,9 @@ const App: React.FC = () => {
  
   const handleGenerateVideo = useCallback(async () => {
      if (!navigator.onLine) {
-       setError("You appear to be offline. Please check your internet connection.");
+       const msg = "You appear to be offline. Please check your internet connection.";
+       setError(msg);
+       setErrorToast(msg);
        return;
      }
      if (!videoPrompt.trim() || !user) {
@@ -1251,7 +1307,9 @@ const App: React.FC = () => {
  
      } catch (err) {
        console.error(err);
-       setError(err instanceof Error ? err.message : 'An unknown error occurred during video generation.');
+       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred during video generation.';
+       setError(errorMessage);
+       setErrorToast(errorMessage);
      } finally {
        clearInterval(messageInterval);
        setIsLoading(false);
@@ -1260,7 +1318,9 @@ const App: React.FC = () => {
 
   const handleGenerateLogo = useCallback(async () => {
     if (!navigator.onLine) {
-      setError("You appear to be offline. Please check your internet connection.");
+      const msg = "You appear to be offline. Please check your internet connection.";
+      setError(msg);
+      setErrorToast(msg);
       return;
     }
     if (!logoBrandName.trim() || !logoKeywords.trim() || !user) {
@@ -1274,6 +1334,7 @@ const App: React.FC = () => {
   
     setIsLoading(true);
     setError(null);
+    setGeneratedLogos([]); // Clear previous logos and variations
     const historyPrompt = `Logo for "${logoBrandName}". Style: ${logoStyle}. Keywords: ${logoKeywords}.`;
   
     try {
@@ -1297,18 +1358,21 @@ const App: React.FC = () => {
         const itemId = `logo_${generationTimestamp}_${index}`;
         const rationale = rationales[index] || "A versatile design that captures your brand's essence.";
         
-        newSessionItems.push({
-          id: itemId,
-          src: imgSrc,
-          rationale: rationale,
-        });
-
         let autoTags: string[] = [];
         try {
           autoTags = await generateTagsForImage({ base64: imgSrc, mimeType: 'image/jpeg' });
         } catch (tagError) {
           console.warn("Auto-tagging failed for a logo image, proceeding without tags.", tagError);
         }
+
+        // FIX: Populate prompt and tags in SessionImage for consistency.
+        newSessionItems.push({
+          id: itemId,
+          src: imgSrc,
+          rationale: rationale,
+          prompt: historyPrompt,
+          tags: autoTags,
+        });
         
         newHistoryItems.push({
           id: itemId,
@@ -1321,22 +1385,94 @@ const App: React.FC = () => {
         });
       }
       
-      setGeneratedLogos(prev => [...newSessionItems, ...prev]);
+      setGeneratedLogos(newSessionItems);
       addItemsToHistory(newHistoryItems);
       deductCredit();
   
     } catch (err) {
       console.error(err);
-      setError(err instanceof Error ? err.message : 'An unknown error occurred while generating logos.');
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred while generating logos.';
+      setError(errorMessage);
+      setErrorToast(errorMessage);
     } finally {
       setIsLoading(false);
     }
   }, [logoBrandName, logoSlogan, logoKeywords, logoColorPalette, logoStyle, user, deductCredit, addItemsToHistory]);
 
+  const handleGenerateLogoVariations = useCallback(async (parentLogo: SessionImage) => {
+    if (!navigator.onLine) {
+      const msg = "You appear to be offline. Please check your internet connection.";
+      setError(msg);
+      setErrorToast(msg);
+      return;
+    }
+    if (!user || user.credits <= 0) {
+      setError('You are out of credits. Please get more to continue.');
+      return;
+    }
+    const previousLogos = [...generatedLogos];
+    setIsLoading(true);
+    setError(null);
+    setGeneratedLogos([]); 
+    try {
+        const mimeType = parentLogo.src.split(';')[0].split(':')[1] || 'image/jpeg';
+        const logoImageData: ImageData = { base64: parentLogo.src, mimeType };
+        
+        const variationImages = await generateLogoVariations(logoImageData);
+
+        const generationTimestamp = Date.now();
+        const newVariationsSessionItems: SessionImage[] = [];
+        const newVariationsHistoryItems: GenerationHistoryItem[] = [];
+
+        for (const [index, imgSrc] of variationImages.slice(0, 3).entries()) {
+            const itemId = `logovar_${generationTimestamp}_${index}`;
+            const autoTags = await generateTagsForImage({ base64: imgSrc, mimeType: 'image/jpeg' });
+            // FIX: Define prompt and tags once to use in both session and history items, resolving the type error.
+            const prompt = `Variation of logo: ${parentLogo.prompt || 'original logo'}`;
+            const tags = [...new Set([...(parentLogo.tags || []), ...autoTags])];
+
+            newVariationsSessionItems.push({
+                id: itemId,
+                src: imgSrc,
+                rationale: `Variation of the selected logo.`,
+                prompt: prompt,
+                tags: tags,
+            });
+            
+            newVariationsHistoryItems.push({
+                id: itemId,
+                type: 'logo',
+                createdAt: new Date().toISOString(),
+                src: imgSrc,
+                prompt: prompt,
+                tags: tags,
+                originalId: parentLogo.id,
+            });
+        }
+        
+        const updatedParentLogo: SessionImage = { ...parentLogo, isParent: true, rationale: parentLogo.rationale || 'Original concept.' };
+        
+        setGeneratedLogos([updatedParentLogo, ...newVariationsSessionItems]);
+
+        addItemsToHistory(newVariationsHistoryItems);
+        deductCredit();
+    } catch (err) {
+        console.error(err);
+        const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred while generating variations.';
+        setError(errorMessage);
+        setErrorToast(errorMessage);
+        setGeneratedLogos(previousLogos);
+    } finally {
+        setIsLoading(false);
+    }
+}, [user, deductCredit, addItemsToHistory, generatedLogos]);
+
 
   const handleSendMessage = useCallback(async (message: string) => {
       if (!navigator.onLine) {
-        setError("You appear to be offline. Please check your internet connection.");
+        const msg = "You appear to be offline. Please check your internet connection.";
+        setError(msg);
+        setErrorToast(msg);
         return;
       }
       if (!chatInstance || isLoading || !message.trim()) return;
@@ -1373,6 +1509,7 @@ const App: React.FC = () => {
            console.error(err);
            const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred during chat.';
            setError(errorMessage);
+           setErrorToast(errorMessage);
            setChatHistory(prev => {
              const newHistory = [...prev];
              const lastMessage = newHistory[newHistory.length - 1];
@@ -1390,7 +1527,9 @@ const App: React.FC = () => {
 
   const handleGenerateIdeas = useCallback(async () => {
     if (!navigator.onLine) {
-      setError("You appear to be offline. Please check your internet connection.");
+      const msg = "You appear to be offline. Please check your internet connection.";
+      setError(msg);
+      setErrorToast(msg);
       return;
     }
     if (!ideaTopic.trim() || !user) {
@@ -1424,7 +1563,9 @@ const App: React.FC = () => {
       deductCredit();
     } catch (err) {
       console.error(err);
-      setError(err instanceof Error ? err.message : 'An unknown error occurred while generating ideas.');
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred while generating ideas.';
+      setError(errorMessage);
+      setErrorToast(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -1457,7 +1598,9 @@ const App: React.FC = () => {
 
   const handleGenerateStrategy = useCallback(async (goal: string, audience: string) => {
     if (!navigator.onLine) {
-        setError("You appear to be offline. Please check your internet connection.");
+        const msg = "You appear to be offline. Please check your internet connection.";
+        setError(msg);
+        setErrorToast(msg);
         return;
     }
     if (!user || user.credits <= 0) {
@@ -1472,7 +1615,9 @@ const App: React.FC = () => {
         setGeneratedStrategy(result);
         deductCredit();
     } catch (err) {
-        setError(err instanceof Error ? err.message : 'An unknown error occurred while generating the strategy.');
+        const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred while generating the strategy.';
+        setError(errorMessage);
+        setErrorToast(errorMessage);
     } finally {
         setIsLoading(false);
     }
@@ -1480,7 +1625,9 @@ const App: React.FC = () => {
 
   const handleGenerateTrendReport = useCallback(async (country: string) => {
     if (!navigator.onLine) {
-        setError("You appear to be offline. Please check your internet connection.");
+        const msg = "You appear to be offline. Please check your internet connection.";
+        setError(msg);
+        setErrorToast(msg);
         return;
     }
     if (!user || user.credits <= 0) {
@@ -1496,7 +1643,9 @@ const App: React.FC = () => {
         setLatestTrendReport(result);
         deductCredit();
     } catch (err) {
-        setError(err instanceof Error ? err.message : 'An unknown error occurred while generating the trend report.');
+        const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred while generating the trend report.';
+        setError(errorMessage);
+        setErrorToast(errorMessage);
     } finally {
         setIsLoading(false);
     }
@@ -1504,7 +1653,9 @@ const App: React.FC = () => {
 
   const handleGenerateSimulation = useCallback(async (creatives: ImageData[], audience: string, channels: string) => {
     if (!navigator.onLine) {
-        setError("You appear to be offline. Please check your internet connection.");
+        const msg = "You appear to be offline. Please check your internet connection.";
+        setError(msg);
+        setErrorToast(msg);
         return;
     }
     if (!user || user.credits <= 0) {
@@ -1531,7 +1682,9 @@ const App: React.FC = () => {
 
         deductCredit();
     } catch (err) {
-        setError(err instanceof Error ? err.message : 'An unknown error occurred while generating the simulation.');
+        const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred while generating the simulation.';
+        setError(errorMessage);
+        setErrorToast(errorMessage);
     } finally {
         setIsLoading(false);
     }
@@ -1552,7 +1705,9 @@ const App: React.FC = () => {
       const results = await handleGenerateCopy(topic, type, selectedImageForCopy);
       setGeneratedCopyInModal(results);
     } catch(err) {
-        setError(err instanceof Error ? err.message : 'An unknown error occurred.');
+        const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
+        setError(errorMessage);
+        setErrorToast(errorMessage);
     } finally {
         setIsModalLoading(false);
     }
@@ -1729,6 +1884,7 @@ const App: React.FC = () => {
                     error={error}
                     handleGenerate={handleGenerateLogo}
                     onImageClick={handleZoomImage}
+                    onGenerateVariations={handleGenerateLogoVariations}
                   />
               )}
                {view === 'poseGenerator' && (
@@ -1826,7 +1982,9 @@ const App: React.FC = () => {
                       const results = await handleGenerateCopy(copywritingTopic, copywritingType);
                       setGeneratedCopy(prev => [...results, ...prev]);
                     } catch (err) {
-                      setError(err instanceof Error ? err.message : 'An unknown error occurred.');
+                      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
+                      setError(errorMessage);
+                      setErrorToast(errorMessage);
                     } finally {
                       setIsLoading(false);
                     }
@@ -1939,6 +2097,8 @@ const App: React.FC = () => {
               onClose={() => setGamificationToast(null)}
           />
       )}
+
+      {errorToast && <ErrorToast message={errorToast} onClose={() => setErrorToast(null)} />}
 
       <ImageZoomModal 
         isOpen={!!zoomedImageSrc}
