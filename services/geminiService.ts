@@ -1,12 +1,4 @@
 
-
-
-
-
-
-
-
-
 import { GoogleGenAI, Modality, Type } from "@google/genai";
 // FIX: Corrected the type name from GenerateVideosOperationResponse to GenerateVideosOperation.
 import type { GenerateVideosOperation } from "@google/genai";
@@ -844,7 +836,7 @@ export async function generateLogo(
 ): Promise<{ images: string[]; rationaleText: string }> {
    try {
     const fullPrompt = `
-      Act as an expert logo designer and brand strategist. Create 4 distinct logo concepts for a brand with the following details:
+      Act as an expert logo designer and brand strategist. Create a distinct logo concept for a brand with the following details:
       - Brand Name: "${brandName}"
       - Slogan: "${slogan || 'Not specified'}"
       - Core Keywords: "${keywords}"
@@ -852,18 +844,12 @@ export async function generateLogo(
       - Style: "${style}"
 
       **Task:**
-      Generate 4 unique logo options. Each logo must be on a solid, clean, white background (#FFFFFF).
-      Simultaneously, provide a written analysis containing a short, one-sentence rationale for EACH of the 4 logos, explaining the design choice.
+      Generate one unique logo option. The logo must be on a solid, clean, white background (#FFFFFF).
+      Simultaneously, provide a written analysis containing a short, one-sentence rationale for the logo, explaining the design choice.
 
       **Output Instructions:**
-      - You will output exactly 4 images.
-      - You will also output a single text block.
-      - In the text block, provide the rationales, clearly numbered 1 to 4, corresponding to the order of the generated images.
-      - Start each rationale on a new line, like this:
-      1. Rationale for logo 1...
-      2. Rationale for logo 2...
-      3. Rationale for logo 3...
-      4. Rationale for logo 4...
+      - You will output exactly 1 image.
+      - You will also output a single text block containing just the rationale for the logo. Do not add any numbering.
     `;
 
     const response = await ai.models.generateContent({
