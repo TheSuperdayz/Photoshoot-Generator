@@ -1,4 +1,5 @@
 
+
 export interface ImageData {
   base64: string;
   mimeType: string;
@@ -7,6 +8,7 @@ export interface ImageData {
 export interface SessionImage {
   id: string;
   src: string;
+  rationale?: string;
 }
 
 export interface SessionVideo {
@@ -49,6 +51,18 @@ export interface BillingHistoryItem {
   amount: number; // in USD
 }
 
+export interface Folder {
+  id: string;
+  name: string;
+}
+
+export interface Campaign {
+  id: string;
+  name: string;
+  goal: string;
+  createdAt: string;
+}
+
 export interface User {
   email: string;
   name: string;
@@ -67,6 +81,9 @@ export interface User {
   level: number;
   xp: number;
   achievements: string[]; // Array of achievement IDs
+  // Organization fields
+  folders?: Folder[];
+  campaigns?: Campaign[];
 }
 
 export interface Template {
@@ -130,19 +147,25 @@ export interface SimulationReport {
 // --- End Predictive Simulator Types ---
 
 
-export type GenerationType = 'photoshoot' | 'mockup' | 'image' | 'idea' | 'copy' | 'edit' | 'pose' | 'group' | 'video' | 'predictiveSimulation';
+export type GenerationType = 'photoshoot' | 'mockup' | 'image' | 'idea' | 'copy' | 'edit' | 'pose' | 'group' | 'video' | 'predictiveSimulation' | 'logo';
 
-export interface GeneratedImageItem {
+interface BaseHistoryItem {
+    folderId?: string;
+    campaignId?: string;
+}
+
+export interface GeneratedImageItem extends BaseHistoryItem {
   id: string;
-  type: 'photoshoot' | 'mockup' | 'image' | 'edit' | 'pose' | 'group';
+  type: 'photoshoot' | 'mockup' | 'image' | 'edit' | 'pose' | 'group' | 'logo';
   createdAt: string;
   src: string;
   prompt: string;
   originalId?: string;
   tags?: string[];
+  rationale?: string;
 }
 
-export interface GeneratedIdeaItem {
+export interface GeneratedIdeaItem extends BaseHistoryItem {
   id: string;
   type: 'idea';
   createdAt: string;
@@ -151,7 +174,7 @@ export interface GeneratedIdeaItem {
   tags?: string[];
 }
 
-export interface GeneratedVideoItem {
+export interface GeneratedVideoItem extends BaseHistoryItem {
   id: string;
   type: 'video';
   createdAt: string;
@@ -160,7 +183,7 @@ export interface GeneratedVideoItem {
   tags?: string[];
 }
 
-export interface PredictiveSimulationItem {
+export interface PredictiveSimulationItem extends BaseHistoryItem {
     id: string;
     type: 'predictiveSimulation';
     createdAt: string;
@@ -211,4 +234,4 @@ export interface MarketingStrategy {
 }
 
 
-export type AppView = 'landing' | 'login' | 'register' | 'dashboard' | 'app' | 'mockup' | 'imageGenerator' | 'aiTalk' | 'creativeIdeas' | 'copywriter' | 'history' | 'todo' | 'settings' | 'billing' | 'creativeJourney' | 'poseGenerator' | 'groupPhoto' | 'videoGenerator' | 'trendRadar' | 'strategyAssistant' | 'predictiveSimulator';
+export type AppView = 'landing' | 'login' | 'register' | 'dashboard' | 'app' | 'mockup' | 'imageGenerator' | 'aiTalk' | 'creativeIdeas' | 'copywriter' | 'history' | 'todo' | 'settings' | 'billing' | 'creativeJourney' | 'poseGenerator' | 'groupPhoto' | 'videoGenerator' | 'trendRadar' | 'strategyAssistant' | 'predictiveSimulator' | 'logoGenerator';

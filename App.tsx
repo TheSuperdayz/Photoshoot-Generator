@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { GoogleGenAI } from "@google/genai";
 import type { Chat } from "@google/genai";
@@ -36,14 +35,15 @@ import { VideoGeneratorScreen } from './screens/VideoGeneratorScreen';
 import { TrendRadarScreen } from './screens/TrendRadarScreen';
 import { StrategyAssistantScreen } from './screens/StrategyAssistantScreen';
 import { PredictiveSimulatorScreen } from './screens/PredictiveSimulatorScreen';
+import { LogoGeneratorScreen } from './screens/LogoGeneratorScreen';
 
 
 // Services
-import { generatePhotoshootImage, generateMockupImage, generateImageFromPrompt, generateCreativeIdeas, generateCopywritingContent, generatePosedImage, generateGroupPhoto, generateVideo, generateMarketingStrategy, generateTrendReport, generatePredictiveSimulation } from './services/geminiService';
+import { generatePhotoshootImage, generateMockupImage, generateImageFromPrompt, generateCreativeIdeas, generateCopywritingContent, generatePosedImage, generateGroupPhoto, generateVideo, generateMarketingStrategy, generateTrendReport, generatePredictiveSimulation, generateLogo, generateTagsForImage } from './services/geminiService';
 import { achievements, getXpForNextLevel } from './services/gamificationService';
 
 // Types
-import type { ImageData, User, Template, ChatMessage, CreativeIdea, CopywritingResult, GenerationHistoryItem, ToDoItem, AIModel, BrandKit, SubscriptionPlan, PaymentMethod, BillingHistoryItem, GeneratedImageItem, SessionImage, AppView, SessionVideo, MarketingStrategy, TrendReport, SimulationReport, PredictiveSimulationItem } from './types';
+import type { ImageData, User, Template, ChatMessage, CreativeIdea, CopywritingResult, GenerationHistoryItem, ToDoItem, AIModel, BrandKit, SubscriptionPlan, PaymentMethod, BillingHistoryItem, GeneratedImageItem, SessionImage, AppView, SessionVideo, MarketingStrategy, TrendReport, SimulationReport, PredictiveSimulationItem, Folder, Campaign } from './types';
 
 const HISTORY_LIMIT = 50; // A reasonable limit for localStorage
 
@@ -157,6 +157,14 @@ const App: React.FC = () => {
   const [generatedVideos, setGeneratedVideos] = useState<SessionVideo[]>([]);
   const [videoLoadingMessage, setVideoLoadingMessage] = useState<string>('Initializing video generation...');
 
+  // Logo Generator State
+  const [logoBrandName, setLogoBrandName] = useState('');
+  const [logoSlogan, setLogoSlogan] = useState('');
+  const [logoKeywords, setLogoKeywords] = useState('');
+  const [logoColorPalette, setLogoColorPalette] = useState('');
+  const [logoStyle, setLogoStyle] = useState('Minimalist');
+  const [generatedLogos, setGeneratedLogos] = useState<SessionImage[]>([]);
+
 
   // AI Talk State
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
@@ -183,6 +191,7 @@ const App: React.FC = () => {
 
   // Trend Radar State
   const [trendReport, setTrendReport] = useState<TrendReport | null>(null);
+  const [latestTrendReport, setLatestTrendReport] = useState<TrendReport | null>(null);
   
   // Predictive Simulator State
   const [simulationReport, setSimulationReport] = useState<SimulationReport | null>(null);
@@ -287,6 +296,8 @@ const App: React.FC = () => {
         localStorage.setItem(`superdayzBrandKit_${user.email}`, JSON.stringify(user.brandKit || { colorPalette: [] }));
         localStorage.setItem(`superdayzBillingHistory_${user.email}`, JSON.stringify(user.billingHistory || []));
         localStorage.setItem(`superdayzPaymentMethods_${user.email}`, JSON.stringify(user.paymentMethods || []));
+        localStorage.setItem(`superdayzFolders_${user.email}`, JSON.stringify(user.folders || []));
+        localStorage.setItem(`superdayzCampaigns_${user.email}`, JSON.stringify(user.campaigns || []));
     }
   }, [user]);
 
@@ -435,6 +446,8 @@ const App: React.FC = () => {
         userData.brandKit = JSON.parse(localStorage.getItem(`superdayzBrandKit_${loggedInUserEmail}`) || '{"colorPalette": []}');
         userData.billingHistory = JSON.parse(localStorage.getItem(`superdayzBillingHistory_${loggedInUserEmail}`) || '[]');
         userData.paymentMethods = JSON.parse(localStorage.getItem(`superdayzPaymentMethods_${loggedInUserEmail}`) || '[]');
+        userData.folders = JSON.parse(localStorage.getItem(`superdayzFolders_${loggedInUserEmail}`) || '[]');
+        userData.campaigns = JSON.parse(localStorage.getItem(`superdayzCampaigns_${loggedInUserEmail}`) || '[]');
         
         // Initialize subscription if it doesn't exist (for older accounts)
         if (!userData.subscription) {
@@ -445,6 +458,9 @@ const App: React.FC = () => {
         if (typeof userData.level !== 'number') userData.level = 1;
         if (typeof userData.xp !== 'number') userData.xp = 0;
         if (!Array.isArray(userData.achievements)) userData.achievements = [];
+        if (!Array.isArray(userData.folders)) userData.folders = [];
+        if (!Array.isArray(userData.campaigns)) userData.campaigns = [];
+
 
         const userHistory = JSON.parse(localStorage.getItem(`superdayzHistory_${loggedInUserEmail}`) || '[]');
         const userToDos = JSON.parse(localStorage.getItem(`superdayzTodos_${loggedInUserEmail}`) || '[]');
@@ -561,6 +577,9 @@ const App: React.FC = () => {
         if (typeof userData.level !== 'number') userData.level = 1;
         if (typeof userData.xp !== 'number') userData.xp = 0;
         if (!Array.isArray(userData.achievements)) userData.achievements = [];
+        if (!Array.isArray(userData.folders)) userData.folders = [];
+        if (!Array.isArray(userData.campaigns)) userData.campaigns = [];
+
 
         if (new Date(userData.lastLogin).toDateString() !== today) {
             userData.lastLogin = new Date().toISOString();
@@ -571,6 +590,8 @@ const App: React.FC = () => {
         userData.brandKit = JSON.parse(localStorage.getItem(`superdayzBrandKit_${email}`) || '{"colorPalette": []}');
         userData.billingHistory = JSON.parse(localStorage.getItem(`superdayzBillingHistory_${email}`) || '[]');
         userData.paymentMethods = JSON.parse(localStorage.getItem(`superdayzPaymentMethods_${email}`) || '[]');
+        userData.folders = JSON.parse(localStorage.getItem(`superdayzFolders_${email}`) || '[]');
+        userData.campaigns = JSON.parse(localStorage.getItem(`superdayzCampaigns_${email}`) || '[]');
         
         const userHistory = JSON.parse(localStorage.getItem(`superdayzHistory_${email}`) || '[]');
         const userToDos = JSON.parse(localStorage.getItem(`superdayzTodos_${email}`) || '[]');
@@ -610,6 +631,8 @@ const App: React.FC = () => {
         level: 1,
         xp: 0,
         achievements: [],
+        folders: [],
+        campaigns: [],
     };
     
     users[email] = newUser;
@@ -624,6 +647,9 @@ const App: React.FC = () => {
     localStorage.setItem(`superdayzBrandKit_${email}`, '{"colorPalette": []}');
     localStorage.setItem(`superdayzBillingHistory_${email}`, '[]');
     localStorage.setItem(`superdayzPaymentMethods_${email}`, '[]');
+    localStorage.setItem(`superdayzFolders_${email}`, '[]');
+    localStorage.setItem(`superdayzCampaigns_${email}`, '[]');
+
 
     setAuthError(null);
     setUser(newUser);
@@ -679,6 +705,8 @@ const App: React.FC = () => {
           localStorage.removeItem(`superdayzBrandKit_${user.email}`);
           localStorage.removeItem(`superdayzBillingHistory_${user.email}`);
           localStorage.removeItem(`superdayzPaymentMethods_${user.email}`);
+          localStorage.removeItem(`superdayzFolders_${user.email}`);
+          localStorage.removeItem(`superdayzCampaigns_${user.email}`);
           handleLogout();
       }
   };
@@ -701,6 +729,35 @@ const App: React.FC = () => {
         )
     );
   };
+
+    const handleCreateFolder = (name: string) => {
+        setUser(currentUser => {
+            if (!currentUser) return null;
+            const newFolder: Folder = { id: `folder_${Date.now()}`, name };
+            return { ...currentUser, folders: [...(currentUser.folders || []), newFolder] };
+        });
+    };
+
+    const handleMoveAssetToFolder = (assetId: string, folderId: string | null) => {
+        setGenerationHistory(prev =>
+            prev.map(item =>
+                item.id === assetId ? { ...item, folderId: folderId === null ? undefined : folderId } : item
+            )
+        );
+    };
+
+    const handleAddCampaign = (name: string, goal: string) => {
+        setUser(currentUser => {
+            if (!currentUser) return null;
+            const newCampaign: Campaign = {
+                id: `campaign_${Date.now()}`,
+                name,
+                goal,
+                createdAt: new Date().toISOString(),
+            };
+            return { ...currentUser, campaigns: [...(currentUser.campaigns || []), newCampaign] };
+        });
+    };
 
   const handleAddModel = (name: string, imageData: ImageData) => {
       const newModel: AIModel = {
@@ -839,18 +896,26 @@ const App: React.FC = () => {
       const newSessionItems: SessionImage[] = [];
       const newHistoryItems: GenerationHistoryItem[] = [];
 
-      finalImages.forEach((imgSrc, index) => {
+      for (const [index, imgSrc] of finalImages.entries()) {
         const itemId = `photoshoot_${generationTimestamp}_${index}`;
         newSessionItems.push({ id: itemId, src: imgSrc });
+
+        let autoTags: string[] = [];
+        try {
+          autoTags = await generateTagsForImage({ base64: imgSrc, mimeType: 'image/jpeg' });
+        } catch (tagError) {
+          console.warn("Auto-tagging failed for a photoshoot image, proceeding without tags.", tagError);
+        }
+
         newHistoryItems.push({
           id: itemId,
           type: 'photoshoot',
           createdAt: new Date().toISOString(),
           src: imgSrc,
           prompt: constructedPrompt,
-          tags: [],
+          tags: autoTags,
         });
-      });
+      }
       
       setGeneratedPhotos(prev => [...newSessionItems, ...prev]);
       addItemsToHistory(newHistoryItems);
@@ -904,18 +969,26 @@ const App: React.FC = () => {
       const newSessionItems: SessionImage[] = [];
       const newHistoryItems: GenerationHistoryItem[] = [];
 
-      finalImages.forEach((imgSrc, index) => {
+      for (const [index, imgSrc] of finalImages.entries()) {
           const itemId = `mockup_${generationTimestamp}_${index}`;
           newSessionItems.push({ id: itemId, src: imgSrc });
+          
+          let autoTags: string[] = [];
+          try {
+            autoTags = await generateTagsForImage({ base64: imgSrc, mimeType: 'image/jpeg' });
+          } catch (tagError) {
+            console.warn("Auto-tagging failed for a mockup image, proceeding without tags.", tagError);
+          }
+
           newHistoryItems.push({
               id: itemId,
               type: 'mockup',
               createdAt: new Date().toISOString(),
               src: imgSrc,
               prompt: historyPrompt,
-              tags: [],
+              tags: autoTags,
           });
-      });
+      }
 
       setGeneratedMockups(prev => [...newSessionItems, ...prev]);
       addItemsToHistory(newHistoryItems);
@@ -964,13 +1037,20 @@ const App: React.FC = () => {
       };
       setGeneratedImages(prev => [newItem, ...prev]);
 
+      let autoTags: string[] = [];
+      try {
+        autoTags = await generateTagsForImage({ base64: finalImage, mimeType: 'image/jpeg' });
+      } catch (tagError) {
+        console.warn("Auto-tagging failed for a generated image, proceeding without tags.", tagError);
+      }
+
       const newHistoryItem: GenerationHistoryItem = {
         id: newItemId,
         type: 'image',
         createdAt: new Date().toISOString(),
         src: finalImage,
         prompt: historyPrompt,
-        tags: [],
+        tags: autoTags,
       };
       addItemsToHistory([newHistoryItem]);
 
@@ -1011,18 +1091,26 @@ const App: React.FC = () => {
       const newSessionItems: SessionImage[] = [];
       const newHistoryItems: GenerationHistoryItem[] = [];
 
-      finalImages.forEach((imgSrc, index) => {
+      for (const [index, imgSrc] of finalImages.entries()) {
         const itemId = `pose_${generationTimestamp}_${index}`;
         newSessionItems.push({ id: itemId, src: imgSrc });
+        
+        let autoTags: string[] = [];
+        try {
+          autoTags = await generateTagsForImage({ base64: imgSrc, mimeType: 'image/jpeg' });
+        } catch (tagError) {
+          console.warn("Auto-tagging failed for a pose image, proceeding without tags.", tagError);
+        }
+
         newHistoryItems.push({
           id: itemId,
           type: 'pose',
           createdAt: new Date().toISOString(),
           src: imgSrc,
           prompt: `Changed pose to: ${posePrompt}`,
-          tags: [],
+          tags: autoTags,
         });
-      });
+      }
       
       setGeneratedPoses(prev => [...newSessionItems, ...prev]);
       addItemsToHistory(newHistoryItems);
@@ -1067,18 +1155,26 @@ const App: React.FC = () => {
       const newSessionItems: SessionImage[] = [];
       const newHistoryItems: GenerationHistoryItem[] = [];
 
-      finalImages.forEach((imgSrc, index) => {
+      for (const [index, imgSrc] of finalImages.entries()) {
         const itemId = `group_${generationTimestamp}_${index}`;
         newSessionItems.push({ id: itemId, src: imgSrc });
+        
+        let autoTags: string[] = [];
+        try {
+          autoTags = await generateTagsForImage({ base64: imgSrc, mimeType: 'image/jpeg' });
+        } catch (tagError) {
+          console.warn("Auto-tagging failed for a group photo, proceeding without tags.", tagError);
+        }
+
         newHistoryItems.push({
           id: itemId,
           type: 'group',
           createdAt: new Date().toISOString(),
           src: imgSrc,
           prompt: historyPrompt,
-          tags: [],
+          tags: autoTags,
         });
-      });
+      }
       
       setGeneratedGroupPhotos(prev => [...newSessionItems, ...prev]);
       addItemsToHistory(newHistoryItems);
@@ -1161,6 +1257,81 @@ const App: React.FC = () => {
        setIsLoading(false);
      }
   }, [videoPrompt, videoSourceImage, user, deductCredit, addItemsToHistory]);
+
+  const handleGenerateLogo = useCallback(async () => {
+    if (!navigator.onLine) {
+      setError("You appear to be offline. Please check your internet connection.");
+      return;
+    }
+    if (!logoBrandName.trim() || !logoKeywords.trim() || !user) {
+      setError('Please provide a brand name and some keywords.');
+      return;
+    }
+    if (user.credits <= 0) {
+      setError('You are out of credits. Please get more to continue.');
+      return;
+    }
+  
+    setIsLoading(true);
+    setError(null);
+    const historyPrompt = `Logo for "${logoBrandName}". Style: ${logoStyle}. Keywords: ${logoKeywords}.`;
+  
+    try {
+      const { images, rationaleText } = await generateLogo(logoBrandName, logoSlogan, logoKeywords, logoColorPalette, logoStyle);
+      
+      const parseRationales = (text: string): string[] => {
+        if (!text) return [];
+        return text.split('\n')
+          .map(line => line.trim())
+          .filter(Boolean)
+          .map(line => line.replace(/^\d+\.\s*/, '').replace(/^(Rationale|Design Choice):\s*/i, '').trim());
+      };
+      
+      const rationales = parseRationales(rationaleText);
+
+      const generationTimestamp = Date.now();
+      const newSessionItems: SessionImage[] = [];
+      const newHistoryItems: GenerationHistoryItem[] = [];
+  
+      for (const [index, imgSrc] of images.entries()) {
+        const itemId = `logo_${generationTimestamp}_${index}`;
+        const rationale = rationales[index] || "A versatile design that captures your brand's essence.";
+        
+        newSessionItems.push({
+          id: itemId,
+          src: imgSrc,
+          rationale: rationale,
+        });
+
+        let autoTags: string[] = [];
+        try {
+          autoTags = await generateTagsForImage({ base64: imgSrc, mimeType: 'image/jpeg' });
+        } catch (tagError) {
+          console.warn("Auto-tagging failed for a logo image, proceeding without tags.", tagError);
+        }
+        
+        newHistoryItems.push({
+          id: itemId,
+          type: 'logo',
+          createdAt: new Date().toISOString(),
+          src: imgSrc,
+          prompt: historyPrompt,
+          tags: autoTags,
+          rationale: rationale,
+        });
+      }
+      
+      setGeneratedLogos(prev => [...newSessionItems, ...prev]);
+      addItemsToHistory(newHistoryItems);
+      deductCredit();
+  
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : 'An unknown error occurred while generating logos.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [logoBrandName, logoSlogan, logoKeywords, logoColorPalette, logoStyle, user, deductCredit, addItemsToHistory]);
 
 
   const handleSendMessage = useCallback(async (message: string) => {
@@ -1246,7 +1417,7 @@ const App: React.FC = () => {
         createdAt: new Date().toISOString(),
         idea: idea,
         prompt: `Topic: '${ideaTopic}' | Type: '${ideaType}'`,
-        tags: [],
+        tags: [ideaType.toLowerCase().replace(' ', '-'), ideaTopic.toLowerCase().split(' ')[0]],
       }));
       addItemsToHistory(newHistoryItems);
 
@@ -1322,6 +1493,7 @@ const App: React.FC = () => {
     try {
         const result = await generateTrendReport(country);
         setTrendReport(result);
+        setLatestTrendReport(result);
         deductCredit();
     } catch (err) {
         setError(err instanceof Error ? err.message : 'An unknown error occurred while generating the trend report.');
@@ -1394,8 +1566,15 @@ const App: React.FC = () => {
     setEditingImage({ id, src });
   };
   
-  const handleSaveEditedImage = (editedSrc: string) => {
+  const handleSaveEditedImage = async (editedSrc: string) => {
     if (!editingImage) return;
+
+    let autoTags: string[] = [];
+    try {
+      autoTags = await generateTagsForImage({ base64: editedSrc, mimeType: 'image/jpeg' });
+    } catch (tagError) {
+      console.warn("Auto-tagging failed for an edited image, proceeding without tags.", tagError);
+    }
 
     const newHistoryItem: GeneratedImageItem = {
         id: `edit_${Date.now()}`,
@@ -1404,7 +1583,7 @@ const App: React.FC = () => {
         src: editedSrc,
         prompt: `Edited from original generation`,
         originalId: editingImage.id, // Link to original
-        tags: [],
+        tags: autoTags,
     };
     addItemsToHistory([newHistoryItem]);
     setEditingImage(null);
@@ -1430,11 +1609,14 @@ const App: React.FC = () => {
             setView(v);
           };
 
-          const imageTypes: GenerationHistoryItem['type'][] = ['photoshoot', 'mockup', 'image', 'edit', 'pose', 'group'];
+          const imageTypes: GenerationHistoryItem['type'][] = ['photoshoot', 'mockup', 'image', 'edit', 'pose', 'group', 'logo'];
           const recentImageCreations = generationHistory
             .filter((item): item is GeneratedImageItem => imageTypes.includes(item.type) && 'src' in item && !!item.src)
             .slice(0, 6)
             .map(item => item.src);
+            
+          const incompleteTodos = toDoList.filter(t => !t.isCompleted).sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+
 
           return (
             <div className="text-gray-200 flex flex-col flex-grow">
@@ -1454,7 +1636,7 @@ const App: React.FC = () => {
                   isLoading={isModalLoading}
                   error={error}
               />
-              {view === 'dashboard' && <DashboardScreen user={user} recentCreations={recentImageCreations} onNavigate={handleNavigation} onImageClick={handleZoomImage} />}
+              {view === 'dashboard' && <DashboardScreen user={user} todos={incompleteTodos} campaigns={user.campaigns || []} latestTrendReport={latestTrendReport} recentCreations={recentImageCreations} onNavigate={handleNavigation} onImageClick={handleZoomImage} onAddCampaign={handleAddCampaign} />}
               {view === 'app' && (
                 <MainAppScreen
                   user={user}
@@ -1527,6 +1709,26 @@ const App: React.FC = () => {
                     onGenerateCopy={handleOpenCopyModal}
                     onImageClick={handleZoomImage}
                     onEditImage={handleOpenImageEditor}
+                  />
+              )}
+               {view === 'logoGenerator' && (
+                  <LogoGeneratorScreen
+                    user={user}
+                    brandName={logoBrandName}
+                    setBrandName={setLogoBrandName}
+                    slogan={logoSlogan}
+                    setSlogan={setLogoSlogan}
+                    keywords={logoKeywords}
+                    setKeywords={setLogoKeywords}
+                    colorPalette={logoColorPalette}
+                    setColorPalette={setLogoColorPalette}
+                    logoStyle={logoStyle}
+                    setLogoStyle={setLogoStyle}
+                    generatedLogos={generatedLogos}
+                    isLoading={isLoading}
+                    error={error}
+                    handleGenerate={handleGenerateLogo}
+                    onImageClick={handleZoomImage}
                   />
               )}
                {view === 'poseGenerator' && (
@@ -1634,9 +1836,12 @@ const App: React.FC = () => {
               {view === 'history' && (
                   <HistoryScreen 
                     history={generationHistory} 
+                    folders={user.folders || []}
                     onImageClick={handleZoomImage} 
                     onEditImage={handleOpenImageEditor} 
                     onUpdateTags={handleUpdateAssetTags}
+                    onAddFolder={handleCreateFolder}
+                    onMoveAsset={handleMoveAssetToFolder}
                   />
               )}
               {view === 'todo' && (
@@ -1684,6 +1889,7 @@ const App: React.FC = () => {
                     onUpdateModel={handleUpdateModel}
                     onDeleteModel={handleDeleteModel}
                     onUpdateBrandKit={handleUpdateBrandKit}
+                    onUpdateProfilePicture={handleUpdateProfilePicture}
                   />
               )}
               {view === 'billing' && (

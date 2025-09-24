@@ -1,3 +1,9 @@
+
+
+
+
+
+
 import { GoogleGenAI, Modality, Type } from "@google/genai";
 // FIX: Corrected the type name from GenerateVideosOperationResponse to GenerateVideosOperation.
 import type { GenerateVideosOperation } from "@google/genai";
@@ -823,5 +829,124 @@ export async function generatePredictiveSimulation(
       throw new Error("Failed to parse the simulation report from the model.");
     }
     throw new Error("Failed to generate predictive simulation.");
+  }
+}
+
+export async function generateLogo(
+  brandName: string,
+  slogan: string,
+  keywords: string,
+  colorPalette: string,
+  style: string,
+): Promise<{ images: string[]; rationaleText: string }> {
+   try {
+    const fullPrompt = `
+      Act as an expert logo designer and brand strategist. Create 4 distinct logo concepts for a brand with the following details:
+      - Brand Name: "${brandName}"
+      - Slogan: "${slogan || 'Not specified'}"
+      - Core Keywords: "${keywords}"
+      - Color Palette: "${colorPalette}"
+      - Style: "${style}"
+
+      **Task:**
+      Generate 4 unique logo options. Each logo must be on a solid, clean, white background (#FFFFFF).
+      Simultaneously, provide a written analysis containing a short, one-sentence rationale for EACH of the 4 logos, explaining the design choice.
+
+      **Output Instructions:**
+      - You will output exactly 4 images.
+      - You will also output a single text block.
+      - In the text block, provide the rationales, clearly numbered 1 to 4, corresponding to the order of the generated images.
+      - Start each rationale on a new line, like this:
+      1. Rationale for logo 1...
+      2. Rationale for logo 2...
+      3. Rationale for logo 3...
+      4. Rationale for logo 4...
+    `;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash-image-preview',
+      contents: {
+        parts: [{ text: fullPrompt }],
+      },
+      config: {
+        responseModalities: [Modality.IMAGE, Modality.TEXT],
+      },
+    });
+    
+    const generatedImages: string[] = [];
+    let rationaleText = '';
+
+    if (response.candidates && response.candidates.length > 0) {
+        for (const part of response.candidates[0].content.parts) {
+            if (part.inlineData) {
+                const base64ImageBytes: string = part.inlineData.data;
+                const mimeType = part.inlineData.mimeType || 'image/jpeg';
+                generatedImages.push(`data:${mimeType};base64,${base64ImageBytes}`);
+            } else if (part.text) {
+                rationaleText += part.text;
+            }
+        }
+    }
+
+    if (generatedImages.length === 0) {
+      throw new Error("The model did not return any logos. Please try again.");
+    }
+    
+    return { images: generatedImages, rationaleText };
+
+  } catch (error) {
+    console.error("Error generating logo with Gemini:", error);
+    throw new Error("Failed to generate logos. The model may be unavailable or the prompt could be invalid.");
+  }
+}
+
+export async function generateTagsForImage(imageData: ImageData): Promise<string[]> {
+  try {
+    const prompt = `
+      Analyze the provided image and generate a list of 3-5 relevant, descriptive keywords or tags that accurately represent its content, style, and mood.
+      Focus on objects, themes, colors, and overall feeling. Do not use generic tags like "image" or "art".
+    `;
+
+    const imagePart = dataUrlToInlineData(imageData.base64);
+    const textPart = { text: prompt };
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: { parts: [textPart, imagePart] },
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            tags: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.STRING,
+                description: "A single descriptive tag.",
+              },
+            },
+          },
+          required: ["tags"],
+        },
+      },
+    });
+
+    const jsonText = response.text.trim();
+    if (!jsonText) {
+      return [];
+    }
+    
+    const result = JSON.parse(jsonText);
+
+    if (!result.tags || !Array.isArray(result.tags)) {
+      console.warn("AI did not return tags in the expected format.");
+      return [];
+    }
+    
+    return (result.tags as string[]).slice(0, 5);
+
+  } catch (error) {
+    console.error("Error generating tags for image:", error);
+    return [];
   }
 }

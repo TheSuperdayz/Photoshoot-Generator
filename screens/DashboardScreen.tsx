@@ -1,233 +1,231 @@
 
-import React, { useRef } from 'react';
-import type { User, AppView } from '../types';
+
+import React from 'react';
+import type { User, AppView, ToDoItem, Campaign, TrendReport } from '../types';
 import { CameraIcon } from '../components/icons/CameraIcon';
-import { TshirtIcon } from '../components/icons/TshirtIcon';
 import { ImageIcon } from '../components/icons/ImageIcon';
+import { DownloadIcon } from '../components/icons/DownloadIcon';
+import { RadarIcon } from '../components/icons/RadarIcon';
+import { PlusIcon } from '../components/icons/PlusIcon';
+import { CalendarIcon } from '../components/icons/CalendarIcon';
+import { BellIcon } from '../components/icons/BellIcon';
+import { Tooltip } from '../components/Tooltip';
+import { TshirtIcon } from '../components/icons/TshirtIcon';
+import { LogoCreatorIcon } from '../components/icons/LogoCreatorIcon';
+import { PoseIcon } from '../components/icons/PoseIcon';
+import { GroupIcon } from '../components/icons/GroupIcon';
+import { VideoIcon } from '../components/icons/VideoIcon';
 import { ChatIcon } from '../components/icons/ChatIcon';
 import { LightbulbIcon } from '../components/icons/LightbulbIcon';
 import { QuillIcon } from '../components/icons/QuillIcon';
-import { CrownIcon } from '../components/icons/CrownIcon';
-import { PoseIcon } from '../components/icons/PoseIcon';
-import { GroupIcon } from '../components/icons/GroupIcon';
-import { DownloadIcon } from '../components/icons/DownloadIcon';
-import { VideoIcon } from '../components/icons/VideoIcon';
-import { RadarIcon } from '../components/icons/RadarIcon';
-import { StrategyIcon } from '../components/icons/StrategyIcon';
-import { TestTubeIcon } from '../components/icons/TestTubeIcon';
 
 
 interface DashboardScreenProps {
   user: User;
+  todos: ToDoItem[];
+  campaigns: Campaign[];
+  latestTrendReport: TrendReport | null;
   recentCreations: string[];
   onNavigate: (view: AppView) => void;
   onImageClick: (imageSrc: string) => void;
+  onAddCampaign: (name: string, goal: string) => void;
 }
 
-const curatedImages = [
-  { 
-    id: 1, 
-    src: 'https://images.unsplash.com/photo-1599329994901-accd5ebbb0ec?q=80&w=987&auto=format&fit=crop&ixlib-rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', 
-    alt: 'Two female models in tracksuits in an urban setting.',
-    prompt: 'Streetwear fashion shoot, two models in an urban brick warehouse, moody lighting, full body shot.',
-    span: 'col-span-1 sm:col-span-1'
-  },
-  { 
-    id: 2, 
-    src: 'https://images.unsplash.com/photo-1600361675600-7eea39b41f3b?q=80&w=1003&auto-format&fit=crop&ixlib-rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', 
-    alt: 'Female model wearing sportswear on a sunny beach.',
-    prompt: 'Summer lifestyle photoshoot, male model on a sunny beach, relaxed pose, vibrant colors.',
-    span: 'col-span-1'
-  },
-  { 
-    id: 3, 
-    src: 'https://images.unsplash.com/photo-1633450802884-35b041181007?q=80&w=987&auto=format&fit=crop&ixlib-rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', 
-    alt: 'High-fashion model with a white handbag.',
-    prompt: 'High-fashion portrait, editorial style, model with pixie cut holding a white designer handbag.',
-    span: 'col-span-1'
-  },
-  { 
-    id: 4, 
-    src: 'https://images.unsplash.com/photo-1642453208368-7c09aa272829?q=80&w=2070&auto=format&fit=crop&ixlib-rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', 
-    alt: 'Female model in a dynamic pose on a chair in a studio.',
-    prompt: 'Avant-garde fashion, male model in a dynamic pose on a chair, studio shot with stark white background.',
-    span: 'col-span-3 sm:col-span-3'
-  },
-  { 
-    id: 5, 
-    src: 'https://images.unsplash.com/photo-1721618878163-5b9387ead23b?q=80&w=987&auto-format&fit=crop&ixlib-rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    alt: 'Female model for a luxury brand reclining on a sofa.',
-    prompt: 'Luxury brand campaign, opulent gold interior, model reclining on a vintage sofa in a lavish room.',
-    span: 'col-span-1 sm:col-span-2'
-  },
-   { 
-    id: 6, 
-    src: 'https://images.unsplash.com/photo-1535292862972-e61ccf5b7e61?q=80&w=994&auto-format&fit=crop&ixlib-rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', 
-    alt: 'Hands holding up classic sneakers against a blue sky.',
-    prompt: 'Product-focused shot, dynamic group of hands holding up classic sneakers against a clean sky.',
-    span: 'col-span-1'
-  },
-];
+const getRelativeDateString = (dueDate: string) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dateParts = dueDate.split('-').map(Number);
+    const due = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+    const diffTime = due.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-
-const ToolCard: React.FC<{ icon: React.ReactNode; title: string; onClick?: () => void; disabled?: boolean }> = ({ icon, title, onClick, disabled }) => {
-  const cardRef = useRef<HTMLButtonElement>(null);
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
-    if (!cardRef.current || disabled) return;
-    const { left, top, width, height } = cardRef.current.getBoundingClientRect();
-    const x = e.clientX - left;
-    const y = e.clientY - top;
-    const rotateX = -1 * ((y - height / 2) / (height / 2)) * 8;
-    const rotateY = ((x - width / 2) / (width / 2)) * 8;
-    
-    cardRef.current.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.05, 1.05, 1.05)`;
-    
-    const glow = cardRef.current.querySelector('.card-3d-glow') as HTMLElement;
-    if (glow) {
-      glow.style.setProperty('--x', `${x}px`);
-      glow.style.setProperty('--y', `${y}px`);
-    }
-  };
-
-  const handleMouseLeave = () => {
-    if (!cardRef.current) return;
-    cardRef.current.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale3d(1, 1, 1)';
-  };
-
-  return (
-    <button
-      ref={cardRef}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      onClick={onClick}
-      disabled={disabled}
-      className={`relative bg-slate-800/60 backdrop-blur-md border border-slate-700 p-6 rounded-xl flex flex-col items-center justify-center text-center transform-gpu card-3d-tilt ${
-        disabled ? 'opacity-50 cursor-not-allowed' : ''
-      }`}
-    >
-      <div className="absolute inset-0 rounded-xl card-3d-glow" />
-      <div className="text-slate-300 mb-3" style={{ transform: 'translateZ(20px)' }}>{icon}</div>
-      <h3 className="font-semibold text-white" style={{ transform: 'translateZ(10px)' }}>{title}</h3>
-    </button>
-  );
+    if (diffDays < -1) return `${Math.abs(diffDays)} days ago`;
+    if (diffDays === -1) return 'Yesterday';
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Tomorrow';
+    return `in ${diffDays} days`;
 };
 
+const WhatsNextWidget: React.FC<{ todos: ToDoItem[]; onNavigate: (view: AppView) => void }> = ({ todos, onNavigate }) => (
+    <div className="lg:col-span-2 bg-slate-800/60 backdrop-blur-md border border-slate-700 p-6 rounded-2xl flex flex-col">
+        <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2"><CalendarIcon className="w-6 h-6" /> What's Next?</h2>
+        <div className="flex-grow space-y-3">
+            {todos.length > 0 ? (
+                todos.slice(0, 3).map(todo => (
+                    <div key={todo.id} className="bg-black/20 p-3 rounded-lg flex justify-between items-center">
+                        <span className="font-medium text-sm">{todo.title}</span>
+                        <div className="flex items-center gap-2 text-xs font-semibold bg-slate-700 text-slate-300 px-2 py-1 rounded-full">
+                           <BellIcon className="w-3 h-3"/> <span>{getRelativeDateString(todo.dueDate)}</span>
+                        </div>
+                    </div>
+                ))
+            ) : (
+                <div className="h-full flex items-center justify-center text-center text-slate-400">
+                    <p>No upcoming tasks. <br/>Ready for the next big idea!</p>
+                </div>
+            )}
+        </div>
+        <button onClick={() => onNavigate('todo')} className="mt-4 w-full text-center text-sm font-semibold text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 py-2 rounded-lg transition-colors">
+            View Full Calendar
+        </button>
+    </div>
+);
 
-const CuratedImageCard: React.FC<{ image: typeof curatedImages[0] }> = ({ image }) => {
-    const cardRef = useRef<HTMLDivElement>(null);
-
-    const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-        if (!cardRef.current) return;
-        const { left, top, width, height } = cardRef.current.getBoundingClientRect();
-        const x = e.clientX - left;
-        const y = e.clientY - top;
-        const rotateX = -1 * ((y - height / 2) / (height / 2)) * 6;
-        const rotateY = ((x - width / 2) / (width / 2)) * 6;
-        cardRef.current.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.03, 1.03, 1.03)`;
-
-        const glow = cardRef.current.querySelector('.card-3d-glow') as HTMLElement;
-        if (glow) {
-            glow.style.setProperty('--x', `${x}px`);
-            glow.style.setProperty('--y', `${y}px`);
+const CampaignsWidget: React.FC<{ campaigns: Campaign[]; onAddCampaign: (name: string, goal: string) => void; }> = ({ campaigns, onAddCampaign }) => {
+    const handleAdd = () => {
+        const name = prompt("Enter new campaign name:");
+        if (name) {
+            const goal = prompt("What is the main goal for this campaign?");
+            if (goal) {
+                onAddCampaign(name, goal);
+            }
         }
     };
-
-    const handleMouseLeave = () => {
-        if (!cardRef.current) return;
-        cardRef.current.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale3d(1, 1, 1)';
-    };
-
     return (
-        <div
-            ref={cardRef}
-            onMouseMove={handleMouseMove}
-            onMouseLeave={handleMouseLeave}
-            className={`rounded-lg overflow-hidden group relative shadow-lg card-3d-tilt ${image.span}`}
-        >
-            <img 
-                src={image.src} 
-                alt={image.alt}
-                className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 rounded-lg card-3d-glow" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4 md:p-6">
-                <p className="text-white text-sm font-medium opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 delay-100" style={{ transform: 'translateZ(20px)' }}>{image.prompt}</p>
+        <div className="lg:col-span-1 bg-slate-800/60 backdrop-blur-md border border-slate-700 p-6 rounded-2xl flex flex-col">
+            <h2 className="text-xl font-bold text-white mb-4">Campaign Hub</h2>
+            <div className="flex-grow space-y-2">
+                {campaigns.slice(-3).reverse().map(c => (
+                     <div key={c.id} className="bg-black/20 p-3 rounded-lg">
+                        <p className="font-semibold text-sm truncate">{c.name}</p>
+                        <p className="text-xs text-slate-400 truncate">{c.goal}</p>
+                    </div>
+                ))}
             </div>
+            <button onClick={handleAdd} className="mt-4 w-full flex items-center justify-center gap-2 text-sm font-semibold text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 py-2 rounded-lg transition-colors">
+                <PlusIcon className="w-4 h-4" /> New Campaign
+            </button>
         </div>
     );
 };
 
-export const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, recentCreations, onNavigate, onImageClick }) => {
-  return (
-    <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-12">
-        <div className="flex flex-wrap items-center gap-4">
-            <h1 className="text-3xl font-bold text-white">What would you like to create today?</h1>
-            {/* FIX: Updated plan check from 'Pro' to 'Executive' */}
-            {user.subscription?.plan === 'Executive' && (
-                <div className="hidden sm:flex items-center gap-2 bg-yellow-400/20 border border-yellow-500/30 text-yellow-300 font-semibold px-3 py-1 rounded-full text-sm animate-fade-in">
-                    <CrownIcon className="w-4 h-4" />
-                    <span>Executive Member</span>
+const TrendsWidget: React.FC<{ report: TrendReport | null; onNavigate: (view: AppView) => void }> = ({ report, onNavigate }) => (
+    <div className="lg:col-span-1 bg-slate-800/60 backdrop-blur-md border border-slate-700 p-6 rounded-2xl flex flex-col">
+        <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2"><RadarIcon className="w-6 h-6" /> Trending Now</h2>
+        <div className="flex-grow">
+            {report ? (
+                <div>
+                    <p className="text-sm text-slate-300 line-clamp-4">{report.summary}</p>
+                    <p className="mt-2 text-xs text-sky-300 font-semibold">{report.topicalTrends[0]?.title}</p>
                 </div>
+            ) : (
+                <p className="text-slate-400 text-sm">No trend report generated yet. Visit the AI Trend Radar to get the latest insights.</p>
             )}
         </div>
-      </div>
+        <button onClick={() => onNavigate('trendRadar')} className="mt-4 w-full text-center text-sm font-semibold text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 py-2 rounded-lg transition-colors">
+            Go to Trend Radar
+        </button>
+    </div>
+);
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 md:gap-6 mb-16">
-        {/* Row 1: Strategy & Ideas */}
-        <ToolCard icon={<RadarIcon className="w-8 h-8" />} title="AI Trend Radar" onClick={() => onNavigate('trendRadar')} />
-        <ToolCard icon={<StrategyIcon className="w-8 h-8" />} title="AI Strategy Asst" onClick={() => onNavigate('strategyAssistant')} />
-        <ToolCard icon={<TestTubeIcon className="w-8 h-8" />} title="AI Media Lab" onClick={() => onNavigate('predictiveSimulator')} />
-        <ToolCard icon={<LightbulbIcon className="w-8 h-8" />} title="AI Idea Gen" onClick={() => onNavigate('creativeIdeas')} />
-        <ToolCard icon={<QuillIcon className="w-8 h-8" />} title="AI Copywriter" onClick={() => onNavigate('copywriter')} />
-        <ToolCard icon={<ChatIcon className="w-8 h-8" />} title="Talk with AI" onClick={() => onNavigate('aiTalk')} />
-        
-        {/* Row 2: Content Creation */}
-        <ToolCard icon={<ImageIcon className="w-8 h-8" />} title="AI Image Gen" onClick={() => onNavigate('imageGenerator')} />
-        <ToolCard icon={<VideoIcon className="w-8 h-8" />} title="AI Video Gen" onClick={() => onNavigate('videoGenerator')} />
-        <ToolCard icon={<CameraIcon className="w-8 h-8" />} title="AI Photoshoot" onClick={() => onNavigate('app')} />
-        <ToolCard icon={<TshirtIcon className="w-8 h-8" />} title="AI Mockups" onClick={() => onNavigate('mockup')} />
-        <ToolCard icon={<PoseIcon className="w-8 h-8" />} title="AI Pose Gen" onClick={() => onNavigate('poseGenerator')} />
-        <ToolCard icon={<GroupIcon className="w-8 h-8" />} title="AI Group Photo" onClick={() => onNavigate('groupPhoto')} />
-      </div>
+const QuickActionButton: React.FC<{
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+}> = ({ onClick, icon, label }) => (
+    <button onClick={onClick} className="flex flex-col items-center justify-center gap-2 bg-black/20 hover:bg-black/40 p-4 rounded-lg transition-colors text-center">
+        {icon}
+        <span className="font-semibold text-sm">{label}</span>
+    </button>
+);
 
-      {recentCreations.length > 0 && (
-        <div className="mb-16">
-          <h2 className="text-2xl font-bold text-white mb-6">Recent creations</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {recentCreations.slice(0, 6).map((image, index) => (
-              <div 
-                key={index} 
-                className="relative group aspect-square bg-slate-800 rounded-lg overflow-hidden cursor-pointer"
-                onClick={() => onImageClick(image)}
-              >
-                <img src={image} alt={`Recent creation ${index + 1}`} className="w-full h-full object-cover" />
-                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                  <a
-                    href={image}
-                    download={`superdayz-creation-${Date.now()}.png`}
-                    className="flex items-center gap-2 bg-white/20 backdrop-blur-sm text-white font-semibold py-2 px-3 rounded-full hover:bg-white/30 transition-colors pointer-events-auto"
-                    title="Download Image"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <DownloadIcon className="w-5 h-5" />
-                  </a>
-                </div>
-              </div>
-            ))}
-          </div>
+
+const QuickActionsWidget: React.FC<{ onNavigate: (view: AppView) => void }> = ({ onNavigate }) => (
+    <div className="lg:col-span-4 bg-slate-800/60 backdrop-blur-md border border-slate-700 p-6 rounded-2xl">
+        <h2 className="text-xl font-bold text-white mb-4">Quick Actions</h2>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+             <QuickActionButton
+                onClick={() => onNavigate('app')}
+                icon={<CameraIcon className="w-8 h-8" />}
+                label="AI Photoshoot"
+             />
+             <QuickActionButton
+                onClick={() => onNavigate('imageGenerator')}
+                icon={<ImageIcon className="w-8 h-8" />}
+                label="AI Image Gen"
+             />
+             <QuickActionButton
+                onClick={() => onNavigate('mockup')}
+                icon={<TshirtIcon className="w-8 h-8" />}
+                label="AI Mockup"
+             />
+             <QuickActionButton
+                onClick={() => onNavigate('logoGenerator')}
+                icon={<LogoCreatorIcon className="w-8 h-8" />}
+                label="AI Logo Gen"
+             />
+             <QuickActionButton
+                onClick={() => onNavigate('poseGenerator')}
+                icon={<PoseIcon className="w-8 h-8" />}
+                label="AI Pose Gen"
+             />
+             <QuickActionButton
+                onClick={() => onNavigate('groupPhoto')}
+                icon={<GroupIcon className="w-8 h-8" />}
+                label="AI Group Photo"
+             />
+             <QuickActionButton
+                onClick={() => onNavigate('videoGenerator')}
+                icon={<VideoIcon className="w-8 h-8" />}
+                label="AI Video Gen"
+             />
+              <QuickActionButton
+                onClick={() => onNavigate('creativeIdeas')}
+                icon={<LightbulbIcon className="w-8 h-8" />}
+                label="Creative Ideas"
+             />
+             <QuickActionButton
+                onClick={() => onNavigate('copywriter')}
+                icon={<QuillIcon className="w-8 h-8" />}
+                label="Copywriter"
+             />
+             <QuickActionButton
+                onClick={() => onNavigate('aiTalk')}
+                icon={<ChatIcon className="w-8 h-8" />}
+                label="AI Talk"
+             />
         </div>
-      )}
+    </div>
+);
 
-      <div>
-        <h2 className="text-2xl font-bold text-white mb-6">Curated collections</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 items-start">
-          {curatedImages.map((image) => (
-            <CuratedImageCard key={image.id} image={image} />
-          ))}
+
+const RecentAssetsWidget: React.FC<{ creations: string[]; onImageClick: (src: string) => void }> = ({ creations, onImageClick }) => (
+    <div className="lg:col-span-4 bg-slate-800/60 backdrop-blur-md border border-slate-700 p-6 rounded-2xl">
+        <h2 className="text-xl font-bold text-white mb-4">Recent Assets</h2>
+        {creations.length > 0 ? (
+            <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
+                {creations.map((image, index) => (
+                    <div key={index} className="relative group aspect-square bg-slate-800 rounded-lg overflow-hidden cursor-pointer" onClick={() => onImageClick(image)}>
+                        <img src={image} alt={`Recent creation ${index + 1}`} className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <a href={image} download={`creation-${Date.now()}.png`} className="p-2 bg-white/20 rounded-full" onClick={(e) => e.stopPropagation()}>
+                                <DownloadIcon className="w-5 h-5" />
+                            </a>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        ) : (
+            <p className="text-slate-400 text-sm text-center py-8">Your first creations will appear here.</p>
+        )}
+    </div>
+);
+
+
+export const DashboardScreen: React.FC<DashboardScreenProps> = ({ user, todos, campaigns, latestTrendReport, recentCreations, onNavigate, onImageClick, onAddCampaign }) => {
+  return (
+    <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8">
+            <h1 className="text-3xl font-bold text-white">Mission Control</h1>
+            <p className="text-slate-400 mt-1">Welcome back, {user.name}. Here's your creative overview.</p>
         </div>
-      </div>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <WhatsNextWidget todos={todos} onNavigate={onNavigate} />
+            <CampaignsWidget campaigns={campaigns} onAddCampaign={onAddCampaign} />
+            <TrendsWidget report={latestTrendReport} onNavigate={onNavigate} />
+            <QuickActionsWidget onNavigate={onNavigate} />
+            <RecentAssetsWidget creations={recentCreations} onImageClick={onImageClick} />
+        </div>
     </main>
   );
 };

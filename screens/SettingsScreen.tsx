@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import type { User, ImageData, AIModel, BrandKit, AppView } from '../types';
 import { PencilIcon } from '../components/icons/PencilIcon';
@@ -6,6 +7,8 @@ import { PaletteIcon } from '../components/icons/PaletteIcon';
 import { BillingIcon } from '../components/icons/BillingIcon';
 import { Tooltip } from '../components/Tooltip';
 import { Alert } from '../components/Alert';
+// FIX: Import UserIcon for the profile picture display.
+import { UserIcon } from '../components/icons/UserIcon';
 
 interface SettingsScreenProps {
   user: User;
@@ -17,9 +20,11 @@ interface SettingsScreenProps {
   onUpdateModel: (id: string, newName: string) => void;
   onDeleteModel: (id: string) => void;
   onUpdateBrandKit: (brandKit: BrandKit) => void;
+  // FIX: Add onUpdateProfilePicture to the props interface to fix the type error.
+  onUpdateProfilePicture: (base64Image: string) => void;
 }
 
-export const SettingsScreen: React.FC<SettingsScreenProps> = ({ user, onUpdateProfile, onChangePassword, onDeleteAccount, onNavigate, onAddModel, onUpdateModel, onDeleteModel, onUpdateBrandKit }) => {
+export const SettingsScreen: React.FC<SettingsScreenProps> = ({ user, onUpdateProfile, onChangePassword, onDeleteAccount, onNavigate, onAddModel, onUpdateModel, onDeleteModel, onUpdateBrandKit, onUpdateProfilePicture }) => {
   // Profile state
   const [name, setName] = useState(user.name);
   const [role, setRole] = useState(user.role);
@@ -33,6 +38,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ user, onUpdatePr
 
   // Model Management state
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // FIX: Add a ref for the profile picture file input.
+  const profilePictureInputRef = useRef<HTMLInputElement>(null);
 
   // Brand Kit state
   const [brandKit, setBrandKit] = useState<BrandKit>(user.brandKit || { colorPalette: [] });
@@ -69,6 +76,23 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ user, onUpdatePr
         setPasswordMessage({ type: 'error', text: (error as Error).message });
     } finally {
         setTimeout(() => setPasswordMessage(null), 4000);
+    }
+  };
+
+  // FIX: Add handlers for profile picture uploading.
+  const handleProfilePictureClick = () => {
+    profilePictureInputRef.current?.click();
+  };
+
+  const handleProfilePictureChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        onUpdateProfilePicture(base64String);
+      };
+      reader.readAsDataURL(file);
     }
   };
   
@@ -164,6 +188,27 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ user, onUpdatePr
         {/* Profile Information Section */}
         <div className="bg-black/30 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-lg p-8 mb-8">
           <h2 className="text-2xl font-bold text-white mb-6">Profile Information</h2>
+          {/* FIX: Add UI for profile picture management. */}
+          <div className="relative w-24 h-24 mx-auto mb-6 group">
+            <div className="w-24 h-24 rounded-full bg-gray-700 flex items-center justify-center overflow-hidden border-2 border-gray-600">
+                {user.profilePicture ? (
+                    <img src={user.profilePicture} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                    <UserIcon className="w-12 h-12 text-gray-400" />
+                )}
+            </div>
+            <button onClick={handleProfilePictureClick} className="absolute inset-0 w-full h-full rounded-full bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" aria-label="Change profile picture">
+                <PencilIcon className="w-6 h-6 text-white"/>
+            </button>
+            <input
+                type="file"
+                ref={profilePictureInputRef}
+                onChange={handleProfilePictureChange}
+                accept="image/png, image/jpeg, image/webp"
+                className="hidden"
+            />
+          </div>
+
           <form onSubmit={handleProfileSubmit} className="space-y-4">
             <div>
               <Tooltip content="This is your display name throughout the application.">
